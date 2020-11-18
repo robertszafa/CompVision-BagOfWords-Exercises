@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-CW1-COMP338
+CW1-COMP338 - Step 1. (20 marks) Feature extraction
 """
 
 import cv2
 import math
+import time
 import numpy as np
 
 from functools import cmp_to_key
@@ -84,15 +85,15 @@ def gen_gaussian_sigmas_in_octaves(sigma):
     imgs_per_octave = 6
     k = 2 ** (1.0 / imgs_per_octave)
 
-    gaussian_kernels = np.zeros(imgs_per_octave)
+    gaussian_sigmas = np.zeros(imgs_per_octave)
 
-    gaussian_kernels[0] = sigma
+    gaussian_sigmas[0] = sigma
     for img_idx in range(1, imgs_per_octave):
         sigma_previous = (k ** (img_idx - 1)) * sigma
         sigma_total = k * sigma_previous
-        gaussian_kernels[img_idx] = np.sqrt(sigma_total ** 2 - sigma_previous ** 2)
+        gaussian_sigmas[img_idx] = np.sqrt(sigma_total ** 2 - sigma_previous ** 2)
 
-    return gaussian_kernels
+    return gaussian_sigmas
 
 def apply_gaussian_kernels(img, num_octaves, sigmas):
     """
@@ -115,7 +116,7 @@ def apply_gaussian_kernels(img, num_octaves, sigmas):
         img = cv2.resize(octave_base, (int(octave_base.shape[1] / 2), int(octave_base.shape[0] / 2)),
                          interpolation=cv2.INTER_NEAREST)
 
-    return np.array(gaussian_imgs)
+    return np.array(gaussian_imgs, dtype=object)
 
 def do_dog(gaussian_imgs):
     dog_images = []
@@ -131,7 +132,7 @@ def do_dog(gaussian_imgs):
 
         dog_images.append(dog_octave)
 
-    return np.array(dog_images)
+    return np.array(dog_images, dtype=object)
 
 
 ################################################################################
@@ -255,8 +256,7 @@ def find_extrema(i, j, image_index, octave_index, num_intervals, dog_images_in_o
     """
     image_shape = dog_images_in_octave[0].shape
 
-    # Try for 5 iterations
-    num_attempts_until_convergence = 5
+    num_attempts_until_convergence = 3
     for attempt_index in range(num_attempts_until_convergence):
         # Normalize into [0, 1] range.
         img1, img2, img3 = dog_images_in_octave[image_index-1:image_index+2]
@@ -435,10 +435,10 @@ def gen_descriptors(keypoints, gaussian_images):
     Generate descriptors for each keypoint
     """
     # Constants from the lecture notes and Lowe's SIFT paper.
-    window_width = 4
     num_bins = 8
     scale_multiplier = 3
     descriptor_max_value = 0.2
+    window_width = 4
 
     descriptors = []
 
@@ -545,7 +545,9 @@ def gen_descriptors(keypoints, gaussian_images):
         descriptor_vector = np.round(512 * descriptor_vector)
         descriptor_vector[descriptor_vector < 0] = 0
         descriptor_vector[descriptor_vector > 255] = 255
-        descriptors.append(descriptor_vector)
+
+        if not np.all(descriptor_vector == 0.0):
+            descriptors.append(descriptor_vector)
 
     return np.array(descriptors, dtype='float32')
 
@@ -596,8 +598,55 @@ def extract_SIFT_features(img, sigma=1.6):
 
 
 
+################################################################################
+# Helper functions
+################################################################################
+def read_images_in_directory(path):
+    images = []
+    for filename in os.listdir(path):
+        img = cv2.imread(os.path.join(path, filename), cv2.IMREAD_GRAYSCALE)
+        if img is not None:
+            images.append(img)
+
+    return images
+
+def get_SIFT_features(images):
+    start_time = time.time()
+
+    feature_descriptors = []
+    for images in images.items():
+        for img in class_images:
+            descriptors, _ = extract_SIFT_features(img)
+            feature_descriptors.append(descriptors)
+
+    return feature_descriptors
 
 
-# Test
-img = cv2.imread('COMP338_Assignment1_Dataset/Training/cars/0029.jpg')
-k = extract_SIFT_features(img)
+if __name__ == "__main__":
+    start_time = time.time()
+
+    DATASET_DIR = 'COMP338_Assignment1_Dataset'
+    CLASSES = [
+        'airplanes',
+        'cars',
+        'dog',
+        'faces',
+        'keyboard',
+    ]
+
+    # Extract SIFT descriptors from training and test images. Store the descriptors in seperate
+    # binary files based on type and class, e.g. trainig_descriptors/cars, test_descriptors/cars, ..
+    for training_or_test in ['Training', 'Test']:
+        for class_name in CLASSES:
+            class_imgs = read_images_in_directory(f'{DATASET_DIR}/{training_or_test}/{class_name}')
+            class_feature_descriptors = get_SIFT_features(class_imgs)
+
+            save_to_file = f'{DATASET_DIR}/{training_or_test.lower()}_descriptors/{class_name}'
+            for descriptors in class_feature_descriptors:
+                with open(save_to_file, 'wb') as f:
+                    np.save(f, descriptors)
+        print(f'Finished {training_or_test}/{class_name} at minute {(time.time() - start_time)/60}')
+
+
+
+    print(f'Finished all in {(time.time() - start_time)/60} minutes.')
