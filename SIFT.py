@@ -6,6 +6,7 @@ CW1-COMP338 - Step 1. (20 marks) Feature extraction
 import cv2
 import math
 import time
+import os
 import numpy as np
 
 from functools import cmp_to_key
@@ -611,13 +612,11 @@ def read_images_in_directory(path):
     return images
 
 def get_SIFT_features(images):
-    start_time = time.time()
-
     feature_descriptors = []
-    for images in images.items():
-        for img in class_images:
-            descriptors, _ = extract_SIFT_features(img)
-            feature_descriptors.append(descriptors)
+    for img in images:
+        descriptors, _ = extract_SIFT_features(img)
+        feature_descriptors.append(descriptors)
+        break
 
     return feature_descriptors
 
@@ -641,11 +640,12 @@ if __name__ == "__main__":
             class_imgs = read_images_in_directory(f'{DATASET_DIR}/{training_or_test}/{class_name}')
             class_feature_descriptors = get_SIFT_features(class_imgs)
 
-            save_to_file = f'{DATASET_DIR}/{training_or_test.lower()}_descriptors/{class_name}'
+            save_to_file = f'{DATASET_DIR}/{training_or_test.lower()}_descriptors/{class_name}.npy'
             for descriptors in class_feature_descriptors:
                 with open(save_to_file, 'wb') as f:
                     np.save(f, descriptors)
-        print(f'Finished {training_or_test}/{class_name} at minute {(time.time() - start_time)/60}')
+
+            print(f'Saved {save_to_file} at minute {(time.time() - start_time)/60}')
 
 
 
