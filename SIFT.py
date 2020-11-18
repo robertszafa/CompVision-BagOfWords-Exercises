@@ -616,7 +616,6 @@ def get_SIFT_features(images):
     for img in images:
         descriptors, _ = extract_SIFT_features(img)
         feature_descriptors.append(descriptors)
-        break
 
     return feature_descriptors
 
