@@ -1,4 +1,4 @@
-
+from typing import Dict, List
 import cv2
 import numpy as np
 import time
@@ -7,7 +7,8 @@ import time
 # Constants
 ################################################################################
 DATASET_DIR = 'COMP338_Assignment1_Dataset'
-CODEBOOK_FILE = f'{DATASET_DIR}/Training/codebook.npy'
+CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
+CODEBOOK_FILE_TEST = f'{DATASET_DIR}/Test/codebook.npy'
 CLASSES = [
     'airplanes',
     'cars',
@@ -67,9 +68,6 @@ def gen_dictionary(feature_descriptors, num_words=500):
     return codebook
 
 
-
-
-
 ################################################################################
 # Helper functions
 ################################################################################
@@ -101,6 +99,21 @@ def read_descriptors(flat=True):
 
     return training_descriptors, test_descriptors
 
+def read_codebook() -> List[Dict[str, List[int]]]:
+    load_training_codebook = np.load(CODEBOOK_FILE_TRAIN, allow_pickle=True)
+    load_test_codebook = np.load(CODEBOOK_FILE_TEST, allow_pickle=True)
+    return load_training_codebook.tolist(), load_test_codebook.tolist()
+
+
+def generate_codebook(codebook_path: str, descriptors_type: List[Dict[str, List[int]]]) -> None:
+    codebook = {}
+    for img_class, descriptors in descriptors_type.items():
+         codebook[img_class] = gen_dictionary(descriptors)
+
+    with open(codebook_path, 'wb') as f:
+        np.save(f, codebook)
+
+
 ################################################################################
 # Main
 ################################################################################
@@ -111,12 +124,7 @@ if __name__ == "__main__":
     training_descriptors, test_descriptors = read_descriptors()
 
     # Generate a codebook for each class.
-    codebook = {}
-    for img_class, descriptors in training_descriptors.items():
-        codebook[img_class] = gen_dictionary(descriptors)
-
-    with open(CODEBOOK_FILE, 'wb') as f:
-        np.save(f, codebook)
+    generate_codebook(CODEBOOK_FILE_TEST, test_descriptors)
 
 
     print(f'Finished program in {(time.time() - start_time)/60} minutes.')
