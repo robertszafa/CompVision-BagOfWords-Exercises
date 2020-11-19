@@ -20,19 +20,18 @@ CLASSES = [
 ################################################################################
 # Step 2. Image representation with a histogram of codewords
 ################################################################################
-# Step 3.1
+## Step 3.1
 def euclidean_distance(vec1, vec2):
     diff = vec1 - vec2
 
     dist = 0
     for p in diff:
-        # Euclidean distance of 2 vectors is: np.sqrt(p.x ** 2 + p.y**2), but our p has only one
-        # value, this is the same as taking the absolute.
+        # Euclidean distance in a 2D plane is: np.sqrt(p.x ** 2 + p.y**2). Our p id 1D,
+        # so we can just take the absolute value.
         dist += abs(p)
 
     return dist
 
-# Step 3.1
 def find_nearest_cluster_idx(descriptor, clusters):
     min_idx = 0
     min_dist = euclidean_distance(descriptor, clusters[min_idx])
@@ -44,7 +43,7 @@ def find_nearest_cluster_idx(descriptor, clusters):
 
     return min_idx
 
-# Step 3.2
+## Step 3.2
 def gen_histogram_of_codewords(img_descriptors, img_class_codebook):
     """
     Generate a histogram of codewords for a single image, which is represented by a list of features.
@@ -58,10 +57,28 @@ def gen_histogram_of_codewords(img_descriptors, img_class_codebook):
 
     return histogram_of_codewords
 
-# Step 3.3
+## Step 3.3
 def l1_norm(vec):
     return np.sum(abs(vec))
 
+def normalise_histogram(img_histogram_of_codewords, img_class_codebook, norm_func):
+    # Normalise the histogram using the passed in norm function.
+    # The norm value of the codeword becomes the ke. and the frequency the value
+    normalised_histogram_of_codewords = []
+    for word_idx in img_histogram_of_codewords:
+        norm = norm_func(img_class_codebook[word_idx])
+
+        if norm in normalised_histogram_of_codewords:
+            # Two histograms could have the same norm. Unlikely, but if it does occur,
+            # then we'll take the combined frequencies.
+            normalised_histogram_of_codewords[norm] += img_histogram_of_codewords[word_idx]
+        else:
+            normalised_histogram_of_codewords[norm] = img_histogram_of_codewords[word_idx]
+
+    print('old len', len([i for i in img_histogram_of_codewords if i > 0]))
+    print('new len', len(normalised_histogram_of_codewords))
+
+    return normalised_histogram_of_codewords
 
 
 def read_codebook():
@@ -92,12 +109,14 @@ if __name__ == "__main__":
         # Training images
         for img_descriptors in training_descriptors[img_class]:
             img_histogram = gen_histogram_of_codewords(img_descriptors, codebook[img_class])
-            training_histogram_of_codewords[img_class].append(img_histogram)
+            nor_img_histogram = normalise_histogram(img_histogram, codebook[img_class], l1_norm)
+            training_histogram_of_codewords[img_class].append(nor_img_histogram)
 
         # Same for Test images.
         for img_descriptors in test_descriptors[img_class]:
             img_histogram = gen_histogram_of_codewords(img_descriptors, codebook[img_class])
-            test_histogram_of_codewords[img_class].append(img_histogram)
+            nor_img_histogram = normalise_histogram(img_histogram, codebook[img_class], l1_norm)
+            test_histogram_of_codewords[img_class].append(nor_img_histogram)
 
     with open('training_histogram_of_codewords.npu', 'wb') as f:
         np.save(f, training_histogram_of_codewords)
