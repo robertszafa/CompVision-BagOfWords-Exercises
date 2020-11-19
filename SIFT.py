@@ -442,6 +442,7 @@ def gen_descriptors(keypoints, gaussian_images):
     window_width = 4
 
     descriptors = []
+    keypoints_used = []
 
     for keypoint in keypoints:
         octave, layer, scale = unpack_octave(keypoint)
@@ -549,8 +550,9 @@ def gen_descriptors(keypoints, gaussian_images):
 
         if not np.all(descriptor_vector == 0.0):
             descriptors.append(descriptor_vector)
+            keypoints_used.append(keypoint)
 
-    return np.array(descriptors, dtype='float32')
+    return np.array(descriptors, dtype='float32'), keypoints_used
 
 def unpack_octave(keypoint):
     """
@@ -575,6 +577,7 @@ def extract_SIFT_features(img, sigma=1.6):
     Extract the SIFT features from the input image.
 
     Returns the extracted keypoints and the generated SIFT descriptors.
+    One keypoint is mapped to one descriptor.
     """
     # SIFT uses only a monochrome intensity image.
     if len(img.shape) == 3:
@@ -592,32 +595,23 @@ def extract_SIFT_features(img, sigma=1.6):
     keypoints = identify_keypoints(gaussian_images, dog_images)
     keypoints = remove_duplicates(keypoints)
 
-    descriptors = gen_descriptors(keypoints, gaussian_images)
+    descriptors, keypoints_used = gen_descriptors(keypoints, gaussian_images)
 
-    return descriptors, keypoints
-
+    return descriptors, keypoints_used
 
 
 
 ################################################################################
 # Helper functions
 ################################################################################
-def read_images_in_directory(path):
-    images = []
+def load_images_in_directory(path):
+    images = {}
     for filename in os.listdir(path):
         img = cv2.imread(os.path.join(path, filename), cv2.IMREAD_GRAYSCALE)
         if img is not None:
-            images.append(img)
+            images[filename] = img
 
     return images
-
-def get_SIFT_features(images):
-    feature_descriptors = []
-    for img in images:
-        descriptors, _ = extract_SIFT_features(img)
-        feature_descriptors.append(descriptors)
-
-    return feature_descriptors
 
 
 if __name__ == "__main__":
@@ -636,16 +630,21 @@ if __name__ == "__main__":
     # binary files based on type and class, e.g. trainig_descriptors/cars, test_descriptors/cars, ..
     for training_or_test in ['Training', 'Test']:
         for class_name in CLASSES:
-            class_imgs = read_images_in_directory(f'{DATASET_DIR}/{training_or_test}/{class_name}')
-            class_feature_descriptors = get_SIFT_features(class_imgs)
+            class_imgs = load_images_in_directory(f'{DATASET_DIR}/{training_or_test}/{class_name}')
+            for fname, img in class_imgs.items():
+                descriptors, keypoints = extract_SIFT_features(img)
+                keypoints = [[k.pt, k.size] for k in keypoints]
 
-            save_to_file = f'{DATASET_DIR}/{training_or_test.lower()}_descriptors/{class_name}.npy'
-            for descriptors in class_feature_descriptors:
-                with open(save_to_file, 'wb') as f:
+                fname = fname.split('.')[0]
+                d_file = f'{DATASET_DIR}/{training_or_test.lower()}_descriptors/{class_name}/{fname}_descriptors.npy'
+                k_file = f'{DATASET_DIR}/{training_or_test.lower()}_descriptors/{class_name}/{fname}_keypoints.npy'
+                with open(d_file, 'wb') as f:
                     np.save(f, descriptors)
+                with open(k_file, 'wb') as f:
+                    np.save(f, keypoints)
 
-            print(f'Saved {save_to_file} at minute {(time.time() - start_time)/60}')
+                print(f'Finished {fname} of {class_name} of {training_or_test} at minute {(time.time() - start_time)//60}')
 
 
 
-    print(f'Finished all in {(time.time() - start_time)/60} minutes.')
+    print(f'Finished all in {(time.time() - start_time)//60} minutes.')
