@@ -108,7 +108,8 @@ if __name__ == "__main__":
     start_time = time.time()
 
     # Read descriptors from binary files.
-    # training_descriptors, test_descriptors = read_descriptors()
+    training_descriptors, test_descriptors = read_descriptors()
+
     # Generate a codebook for each class.
     codebook = {}
     for img_class, descriptors in training_descriptors.items():
@@ -116,15 +117,6 @@ if __name__ == "__main__":
 
     with open(CODEBOOK_FILE, 'wb') as f:
         np.save(f, codebook)
-
-
-    # Read codebook.
-    # with open(CODEBOOK_FILE, 'rb') as f:
-    #     tmp_codebook = np.load(f, allow_pickle=True)
-    # # numpy wraps the python dictionary into an object array. Transform it back into a python dictionary.
-    # codebook = {}
-    # for img_class in CLASSES:
-    #     codebook[img_class] = tmp_codebook[()][img_class]
 
 
     print(f'Finished program in {(time.time() - start_time)/60} minutes.')
