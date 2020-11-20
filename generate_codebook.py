@@ -74,10 +74,16 @@ def gen_dictionary(feature_descriptors, num_words=500):
 # Helper functions
 ################################################################################
 def load_np_pickles_in_directory(path, regex=r'.*.(npy|npc)'):
+    """
+    Given a {path} to a directory load all numpy pickle files in that directory that match {regex}.
+    Return a dictionary, {fname: np.load(fname)}, where fname includes only the part before '.' and '_'.
+    """
     result = {}
     for filename in os.listdir(path):
         if re.match(regex, filename):
-            result[filename] = np.load(path + filename, allow_pickle=True)
+            # Get rid of file extensions and (keypoints|descriptors) annotations.
+            key = filename.split('.')[0].split('_')[0]
+            result[key] = np.load(path + filename, allow_pickle=True)
 
     return result
 
