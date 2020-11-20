@@ -77,7 +77,7 @@ def load_np_pickles_in_directory(path, regex=r'.*.(npy|npc)'):
     result = {}
     for filename in os.listdir(path):
         if re.match(regex, filename):
-            result[filename] = np.load(path + filename)
+            result[filename] = np.load(path + filename, allow_pickle=True)
 
     return result
 
@@ -108,6 +108,34 @@ def load_descriptors(test_or_train, merge_in_class=False):
             descriptors[class_name] = descriptors_dict
 
     return descriptors
+
+def load_keypoints(test_or_train, merge_in_class=False):
+    """
+    Read the keypoints from the {test_or_train} dataset.
+    Return a dictionary with the class names as keys.
+    If {merge_in_class} is True, then a single class will have a list of all keypoints as the value.
+    Otherwise, it will have a list of dictionaries as values, where the dictionaries have
+    the individual img filename as key and their list of keypoints as values.
+    """
+    keypoints = {}
+    for class_name in CLASSES:
+        match_keypoints = r'.*_keypoints' + re.escape('.npy')
+        load_from = f'{DATASET_DIR}/{test_or_train}/{class_name}/'
+        keypoints_dict = load_np_pickles_in_directory(load_from, match_keypoints)
+
+        if merge_in_class:
+            # Merge all img keypoints from tge same class into one list.
+            # We ignore the individual img file names here.
+            class_keypoints = []
+            for img_keypoints in keypoints_dict.values():
+                for d in img_keypoints:
+                    class_keypoints.append(d)
+
+            keypoints[class_name] = class_keypoints
+        else:
+            keypoints[class_name] = keypoints_dict
+
+    return keypoints
 
 
 def read_codebook() -> List[Dict[str, List[int]]]:
