@@ -2,6 +2,8 @@
 import cv2
 import numpy as np
 import time
+import re
+import os
 
 ################################################################################
 # Constants
@@ -42,27 +44,28 @@ def gen_dictionary(feature_descriptors, num_words=500):
         descriptor = feature_descriptors[i]
         codebook.append(descriptor)
 
-    # Do: while therw were any changes in any cluster.
+    # Do, while there were any changes in any cluster.
+    # Use the L1 norm to check for closeness.
+    # l1_norm = lambda v : np.sum(abs(v))
     no_change = False
     max_iter = 10
     iteration = 0
     while not no_change and iteration < max_iter:
+        print('iter ', iteration)
         iteration += 1
         no_change = True
+
         for descriptor in feature_descriptors:
             closest_cluster_idx = find_closest_neighbour_idx(codebook, descriptor)
 
             # Update cluster center and increase count.
             new_center = (codebook[closest_cluster_idx] + descriptor) / 2
 
-            # Stop when the improvements become very small.
+            # Stop when the improvements become negligable.
             delta_for_change = 10
-            if np.sum(abs(codebook[closest_cluster_idx] - new_center) > delta_for_change):
+            if np.any(abs(codebook[closest_cluster_idx] - new_center) > delta_for_change):
                 codebook[closest_cluster_idx] = new_center
                 no_change = False
-
-        print('iter++')
-    print('end while')
 
     return codebook
 
@@ -73,33 +76,14 @@ def gen_dictionary(feature_descriptors, num_words=500):
 ################################################################################
 # Helper functions
 ################################################################################
-def read_descriptors(flat=True):
-    training_descriptors = {}
-    test_descriptors = {}
+def load_np_pickles_in_directory(path, regex=r'.*.(npy|npc)'):
+    result = {}
+    for filename in os.listdir(path):
+        if re.match(regex, filename):
+            result[filename] = np.load(path + filename)
 
-    for class_name in CLASSES:
-        with open(f'{DATASET_DIR}/training_descriptors/{class_name}.npy', 'rb') as f:
-            training_descriptors[class_name] = np.load(f, allow_pickle=True)
+    return result
 
-        with open(f'{DATASET_DIR}/test_descriptors/{class_name}.npy', 'rb') as f:
-            test_descriptors[class_name] = np.load(f, allow_pickle=True)
-
-        if flat:
-            # Put all descriptors from all images into a single list.
-            tmp = training_descriptors[class_name]
-            training_descriptors[class_name] = []
-            for img in tmp:
-                for descriptor in img:
-                    training_descriptors[class_name].append(descriptor)
-
-            tmp = test_descriptors[class_name]
-            test_descriptors[class_name] = []
-            for img in tmp:
-                for descriptor in img:
-                    test_descriptors[class_name].append(descriptor)
-
-
-    return training_descriptors, test_descriptors
 
 ################################################################################
 # Main
@@ -107,16 +91,28 @@ def read_descriptors(flat=True):
 if __name__ == "__main__":
     start_time = time.time()
 
-    # Read descriptors from binary files.
-    training_descriptors, test_descriptors = read_descriptors()
+    training_descriptors = {}
+    for class_name in CLASSES:
+        match_descriptors = r'.*_descriptors' + re.escape('.npy')
+        load_from = f'{DATASET_DIR}/Training/{class_name}/'
+        descriptors_dict = load_np_pickles_in_directory(load_from, match_descriptors)
+
+        # Merge all img descriptors from tge same class into one list.
+        # We ignore the individual img file names here.
+        class_descriptors = []
+        for img_descriptors in descriptors_dict.values():
+            for d in img_descriptors:
+                class_descriptors.append(d)
+
+        training_descriptors[class_name] = class_descriptors
 
     # Generate a codebook for each class.
     codebook = {}
     for img_class, descriptors in training_descriptors.items():
         codebook[img_class] = gen_dictionary(descriptors)
+        print(f'Finished {img_class} at minute {(time.time() - start_time)/60}.')
 
     with open(CODEBOOK_FILE, 'wb') as f:
         np.save(f, codebook)
-
 
     print(f'Finished program in {(time.time() - start_time)/60} minutes.')
