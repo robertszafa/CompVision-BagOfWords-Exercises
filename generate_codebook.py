@@ -81,6 +81,35 @@ def load_np_pickles_in_directory(path, regex=r'.*.(npy|npc)'):
 
     return result
 
+def load_descriptors(test_or_train, merge_in_class=False):
+    """
+    Read the descriptors from the {test_or_train} dataset.
+    Return a dictionary with the class names as keys.
+    If {merge_in_class} is True, then a single class will have a list of all descriptors as the value.
+    Otherwise, it will have a list of dictionaries as values, where the dictionaries have
+    the individual img filename as key and their list of descriptors as values.
+    """
+    descriptors = {}
+    for class_name in CLASSES:
+        match_descriptors = r'.*_descriptors' + re.escape('.npy')
+        load_from = f'{DATASET_DIR}/{test_or_train}/{class_name}/'
+        descriptors_dict = load_np_pickles_in_directory(load_from, match_descriptors)
+
+        if merge_in_class:
+            # Merge all img descriptors from tge same class into one list.
+            # We ignore the individual img file names here.
+            class_descriptors = []
+            for img_descriptors in descriptors_dict.values():
+                for d in img_descriptors:
+                    class_descriptors.append(d)
+
+            descriptors[class_name] = class_descriptors
+        else:
+            descriptors[class_name] = descriptors_dict
+
+    return descriptors
+
+
 def read_codebook() -> List[Dict[str, List[int]]]:
     load_training_codebook = np.load(CODEBOOK_FILE_TRAIN, allow_pickle=True)
     load_test_codebook = np.load(CODEBOOK_FILE_TEST, allow_pickle=True)
@@ -95,20 +124,7 @@ if __name__ == "__main__":
 
     # Merge the descriptors from one class into a single list.
     # training_descriptors will hold ['class_name': descriptors_list] pairs
-    training_descriptors = {}
-    for class_name in CLASSES:
-        match_descriptors = r'.*_descriptors' + re.escape('.npy')
-        load_from = f'{DATASET_DIR}/Training/{class_name}/'
-        descriptors_dict = load_np_pickles_in_directory(load_from, match_descriptors)
-
-        # Merge all img descriptors from tge same class into one list.
-        # We ignore the individual img file names here.
-        class_descriptors = []
-        for img_descriptors in descriptors_dict.values():
-            for d in img_descriptors:
-                class_descriptors.append(d)
-
-        training_descriptors[class_name] = class_descriptors
+    training_descriptors = load_descriptors(test_or_train='Training', merge_in_class=True)
 
     # Generate a codebook for each class.
     codebook = {}
@@ -121,3 +137,4 @@ if __name__ == "__main__":
 
 
     print(f'Finished program in {(time.time() - start_time)/60} minutes.')
+
