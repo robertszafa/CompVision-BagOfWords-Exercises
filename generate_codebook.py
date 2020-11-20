@@ -1,4 +1,4 @@
-
+from typing import Dict, List
 import cv2
 import numpy as np
 import time
@@ -9,7 +9,8 @@ import os
 # Constants
 ################################################################################
 DATASET_DIR = 'COMP338_Assignment1_Dataset'
-CODEBOOK_FILE = f'{DATASET_DIR}/Training/codebook.npy'
+CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
+CODEBOOK_FILE_TEST = f'{DATASET_DIR}/Test/codebook.npy'
 CLASSES = [
     'airplanes',
     'cars',
@@ -51,7 +52,6 @@ def gen_dictionary(feature_descriptors, num_words=500):
     max_iter = 10
     iteration = 0
     while not no_change and iteration < max_iter:
-        print('iter ', iteration)
         iteration += 1
         no_change = True
 
@@ -70,9 +70,6 @@ def gen_dictionary(feature_descriptors, num_words=500):
     return codebook
 
 
-
-
-
 ################################################################################
 # Helper functions
 ################################################################################
@@ -84,6 +81,11 @@ def load_np_pickles_in_directory(path, regex=r'.*.(npy|npc)'):
 
     return result
 
+def read_codebook() -> List[Dict[str, List[int]]]:
+    load_training_codebook = np.load(CODEBOOK_FILE_TRAIN, allow_pickle=True)
+    load_test_codebook = np.load(CODEBOOK_FILE_TEST, allow_pickle=True)
+    return load_training_codebook.tolist(), load_test_codebook.tolist()
+
 
 ################################################################################
 # Main
@@ -91,6 +93,8 @@ def load_np_pickles_in_directory(path, regex=r'.*.(npy|npc)'):
 if __name__ == "__main__":
     start_time = time.time()
 
+    # Merge the descriptors from one class into a single list.
+    # training_descriptors will hold ['class_name': descriptors_list] pairs
     training_descriptors = {}
     for class_name in CLASSES:
         match_descriptors = r'.*_descriptors' + re.escape('.npy')
@@ -112,7 +116,8 @@ if __name__ == "__main__":
         codebook[img_class] = gen_dictionary(descriptors)
         print(f'Finished {img_class} at minute {(time.time() - start_time)/60}.')
 
-    with open(CODEBOOK_FILE, 'wb') as f:
+    with open(CODEBOOK_FILE_TRAIN, 'wb') as f:
         np.save(f, codebook)
+
 
     print(f'Finished program in {(time.time() - start_time)/60} minutes.')
