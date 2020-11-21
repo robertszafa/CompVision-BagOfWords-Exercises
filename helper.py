@@ -21,6 +21,12 @@ TEST_PATH = f'{DATASET_DIR}/Test'
 CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
 CODEBOOK_FILE_TEST = f'{DATASET_DIR}/Test/codebook.npy'
 
+def training_histogram_keys():
+    return [(CLASSES[i], f'{TRAINING_PATH}/{CLASSES[i]}') for i in range(len(CLASSES))]
+
+def test_histogram_keys():
+    return [(CLASSES[i], f'{TEST_PATH}/{CLASSES[i]}') for i in range(len(CLASSES))]
+
 ################################################################################
 # Read binary files
 ################################################################################
@@ -67,4 +73,4 @@ def read_single_histograms(histogram_file_paths, filter_key=None):
         load_histograms_values = np.load(f'{filter_key[1]}/{file}', allow_pickle=True)
         histogram_values[filter_key].append(load_histograms_values.tolist())
 
-    return histogram_values
+    return histogram_values if filter_key else read_all_histograms(histogram_file_paths)
