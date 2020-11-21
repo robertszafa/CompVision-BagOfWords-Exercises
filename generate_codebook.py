@@ -49,7 +49,7 @@ def gen_dictionary(feature_descriptors, num_words=500):
     # Use the L1 norm to check for closeness.
     # l1_norm = lambda v : np.sum(abs(v))
     no_change = False
-    max_iter = 10
+    max_iter = 70
     iteration = 0
     while not no_change and iteration < max_iter:
         iteration += 1
