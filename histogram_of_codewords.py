@@ -10,8 +10,6 @@ from generate_codebook import load_descriptors, load_keypoints
 ################################################################################
 DATASET_DIR = 'COMP338_Assignment1_Dataset'
 CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
-HISTOGRAM_FILE_TRAIN = f'{DATASET_DIR}/Training/histogram.npy'
-HISTOGRAM_FILE_TEST = f'{DATASET_DIR}/Test/histogram.npy'
 CLASSES = [
     'airplanes',
     'cars',
@@ -73,25 +71,25 @@ def gen_histogram_of_codewords(img_descriptors, img_class_codebook):
 def draw_keypoint(img_fname, kp_x, kp_y, kp_diameter, title=''):
     img = cv2.imread(img_fname)
     radius = kp_diameter//2
-    kp = img[kp_x-radius : kp_x+radius][kp_y-radius : kp_y+radius][:]
+    kp = img[kp_x-radius : kp_x+radius, kp_y-radius : kp_y+radius]
 
     cv2.imshow(title, kp)
     cv2.waitKey(0)
 
-def visualize_similar_patches(idxs_of_most_similar_keypoints_dict, training_keypoints, imgs_path):
-    for img_class, images in training_descriptors.items():
-        for img_fname, idxs_of_most_similar_keypoints in images.items():
-            for i, k_idx in enumerate(idxs_of_most_similar_keypoints):
-                if img_fname in training_keypoints[img_class]:
-                    # We have saved the keypoint as [(kp_x, (kp_y), kp_diameter]
-                    kp = training_keypoints[img_class][img_fname][k_idx]
+def visualize_similar_patches(idxs_of_most_similar_keypoints_dict, training_keypoints,
+                              imgs_path, kp_size_threshold=30):
+    for img_class, class_images in idxs_of_most_similar_keypoints_dict.items():
+        for img_id, list_of_kp_idxs in class_images.items():
+            for i, k_idx in enumerate(list_of_kp_idxs):
+                # We have saved the keypoint as [(kp_x, (kp_y), kp_diameter]
+                kp = training_keypoints[img_class][img_id][k_idx]
 
-                    img_fname = f'{imgs_path}/{img_class}/{img_fname}'
-                    title = title=f'{img_class}/{img_fname} {i}-th similar patch'
+                img_fname = f'{imgs_path}/{img_class}/{img_id}.jpg'
+                title = title=f'{img_class}/{img_id} {i}-th similar patch'
 
-                    draw_keypoint(img_fname, kp[0][0], kp[0][1], kp[1], title)
-                else:
-                    print('not in here')
+                kp_diameter = int(kp[1])
+                if kp_diameter > kp_size_threshold:
+                    draw_keypoint(img_fname, int(kp[0][0]), int(kp[0][1]), kp_diameter, title)
 
 ## Step 3.4
 def l1_norm(vec):
@@ -116,9 +114,9 @@ def normalise_histogram(img_histogram_of_codewords, img_class_codebook, norm_fun
     return normalised_histogram_of_codewords
 
 
-def read_codebook():
+def load_dict_pickle(fname):
     # Read codebook.
-    with open(CODEBOOK_FILE_TRAIN, 'rb') as f:
+    with open(fname, 'rb') as f:
         tmp_codebook = np.load(f, allow_pickle=True)
 
     # numpy wraps the python dictionary into an object array.
@@ -132,7 +130,7 @@ def read_codebook():
 
 
 if __name__ == "__main__":
-    codebook = read_codebook()
+    codebook = load_dict_pickle(CODEBOOK_FILE_TRAIN)
 
     # Get image descriptors, the format will be:
     # training_descriptors = {
@@ -154,35 +152,40 @@ if __name__ == "__main__":
     idxs_of_most_similar_keypoints_dict = {c_name: dict() for c_name in CLASSES}
 
     training_histogram_of_codewords = {c_name: dict() for c_name in CLASSES}
-    for img_class, images in training_descriptors.items():
-        for img_fname, img_descriptors in images.items():
+    for img_class, descriptors_files in training_descriptors.items():
+        for img_id, img_descriptors in descriptors_files.items():
             img_histogram, idxs_of_most_similar_keypoints = \
                 gen_histogram_of_codewords(img_descriptors, codebook[img_class])
 
             nor_img_histogram = normalise_histogram(img_histogram, codebook[img_class], l1_norm)
-            training_histogram_of_codewords[img_class][img_fname] = nor_img_histogram
+            training_histogram_of_codewords[img_class][img_id] = nor_img_histogram
 
-            idxs_of_most_similar_keypoints_dict[img_class][img_fname] = idxs_of_most_similar_keypoints
+            idxs_of_most_similar_keypoints_dict[img_class][img_id] = idxs_of_most_similar_keypoints
+
+            # Save each image histogram to a seperate file
+            fname = f'{img_id}_histogram.npy'
+            with open(f'{DATASET_DIR}/Training/{img_class}/{fname}', 'wb') as f:
+                np.save(f, nor_img_histogram)
 
     # Same for Test images.
     test_histogram_of_codewords = {c_name: dict() for c_name in CLASSES}
     for img_class, images in test_descriptors.items():
-        for img_fname, img_descriptors in images.items():
+        for img_id, img_descriptors in images.items():
             img_histogram, _ = gen_histogram_of_codewords(img_descriptors, codebook[img_class])
 
             nor_img_histogram = normalise_histogram(img_histogram, codebook[img_class], l1_norm)
-            test_histogram_of_codewords[img_class][img_fname] = nor_img_histogram
+            test_histogram_of_codewords[img_class][img_id] = nor_img_histogram
 
+            # Save each image histogram to a seperate file
+            fname = f'{img_id}_histogram.npy'
+            with open(f'{DATASET_DIR}/Test/{img_class}/{fname}', 'wb') as f:
+                np.save(f, nor_img_histogram)
 
-    with open(HISTOGRAM_FILE_TRAIN, 'wb') as f:
-        np.save(f, training_histogram_of_codewords)
-
-    with open(HISTOGRAM_FILE_TEST, 'wb') as f:
-        np.save(f, test_histogram_of_codewords)
 
     with open('idxs_of_most_similar_keypoints.npy', 'wb') as f:
         np.save(f, idxs_of_most_similar_keypoints_dict)
+    # idxs_of_most_similar_keypoints_dict = load_dict_pickle('idxs_of_most_similar_keypoints.npy')
 
-    ## Step 3.3 Visualize some image patches that are assigned to the same codeword.
+    # Step 3.3 Visualize some image patches that are assigned to the same codeword.
     visualize_similar_patches(idxs_of_most_similar_keypoints_dict,
                               training_keypoints, imgs_path=f'{DATASET_DIR}/Training/')
