@@ -22,16 +22,29 @@ def apply_nearest_neighbour(training_histogram, test_histogram):
         result[class_type] = euclidean_distance(class_type, training_histogram[class_type], test_histogram[class_type])
     return result
 
-# {'airplanes': 600.9267842258323, 'cars': 549.5152409169376, 'dog': 607.9662819597811, 'faces': 606.4041556585838, 'keyboard': 597.047736784924})
-# Matching between input image and training image is found by calculating the distance between historgram
-
 def label_classification(training_histogram, test_histogram):
     return
 
+
+def testing(training, test, train_airplanes_key, test_airplanes_key):
+    test_histograms = hp.read_all_histograms(test)
+    training_histograms = hp.read_all_histograms(training)
+
+    test_a1 = test_histograms[test_airplanes_key][0] # Takes too long to load
+    train_a1 = training_histograms[train_airplanes_key][0]
+    train_a2 = training_histograms[train_airplanes_key][1]
+
 if __name__ == "__main__":
-    training, test = hp.get_histogram_paths()
-    s = hp.read_histograms(test)
-    print(s)
+    training_path, test_path = hp.get_histogram_paths()
+    train_airplanes_key = (hp.CLASSES[0], f'{hp.TRAINING_PATH}/{hp.CLASSES[0]}')
+    test_airplanes_key = (hp.CLASSES[0], f'{hp.TEST_PATH}/{hp.CLASSES[0]}')
+
+    # Testing test airplanes vs training airplanes histogram of codewords
+    a_test = hp.read_single_histograms(test_path, test_airplanes_key)
+    a_training = hp.read_single_histograms(training_path,train_airplanes_key)
+
+    a_test_size = len(a_test[test_airplanes_key])
+
 
 # useful sources
 # https://www.pyimagesearch.com/2014/07/14/3-ways-compare-histograms-using-opencv-python/
