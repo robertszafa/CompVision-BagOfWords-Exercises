@@ -2,23 +2,11 @@ import cv2
 import numpy as np
 import time
 import sys
+import re
 
-from generate_codebook import load_descriptors, load_keypoints
+from helper import load_descriptors, load_keypoints, load_codebook, DATASET_DIR, CLASSES
 
-################################################################################
-# Constants
-################################################################################
-DATASET_DIR = 'COMP338_Assignment1_Dataset'
-CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
-CLASSES = [
-    'airplanes',
-    'cars',
-    'dog',
-    'faces',
-    'keyboard',
-]
-
-################################################################################
+###########################################################################
 # Step 2. Image representation with a histogram of codewords
 ################################################################################
 ## Step 3.1
@@ -73,27 +61,12 @@ def draw_keypoint(img_fname, kp_x, kp_y, kp_diameter, title=''):
     cv2.imshow(title, kp)
     cv2.waitKey(0)
 
-def visualize_similar_patches(map_kp_idxs_to_codewords, training_keypoints, imgs_path):
-    # map_kp_idxs_to_codewords = {
-    #     cars: [
-    #             {
-    #                 img_id_0: [KeyPoints...],
-    #                 img_id_1: [KeyPoints...],
-    #                 ...
-    #             }, <-- Dict of {img_id: keypoints_list} pairs assigned to codeword 0 from cars class.
-    #             ... same wfor rest of codwords in this class.
-    #     ]
-    for img_class, kp_to_codeword_map in map_kp_idxs_to_codewords.items():
-        for word_idx, img_ids_to_kp_dict in enumerate(kp_to_codeword_map):
-            for img_id, kp_idxs_list in img_ids_to_kp_dict.items():
-                for kp_idx in kp_idxs_list:
-                    # We have saved the keypoint as [(kp_x, (kp_y), kp_diameter]
-                    kp = training_keypoints[img_class][img_id][kp_idx]
-
-                    img_fname = f'{imgs_path}/{img_class}/{img_id}.jpg'
-                    title = title=f'{img_class}/{img_id} --> codeword_{word_idx}'
-
-                    draw_keypoint(img_fname, int(kp[0][0]), int(kp[0][1]), int(kp[1]), title)
+def visualize_similar_patches(map_kp_idxs_to_codewords):
+    for word_idx, img_fname_keypoints_pairs in enumerate(map_kp_idxs_to_codewords):
+        for img_fname, kps in img_fname_keypoints_pairs.items():
+            for kp in kps:
+                title = title=f'{img_fname.split(DATASET_DIR)[1]} --> codeword_{word_idx}'
+                draw_keypoint(img_fname, int(kp[0][0]), int(kp[0][1]), int(kp[1]), title)
 
 ## Step 3.4
 def l1_norm(vec):
@@ -118,105 +91,89 @@ def normalise_histogram(img_histogram_of_codewords, img_class_codebook, norm_fun
     return normalised_histogram_of_codewords
 
 
-def load_dict_pickle(fname):
-    # Read codebook.
-    with open(fname, 'rb') as f:
-        tmp_codebook = np.load(f, allow_pickle=True)
-
-    # numpy wraps the python dictionary into an object array.
-    # Transform it back into a python dictionary.
-    codebook = {}
-    for img_class in CLASSES:
-        codebook[img_class] = tmp_codebook[()][img_class]
-
-    return codebook
-
-
-
 if __name__ == "__main__":
-    codebook = load_dict_pickle(CODEBOOK_FILE_TRAIN)
+    codebook = load_codebook()
 
-    # Get image descriptors, the format will be:
-    # training_descriptors = {
-    #     cars: {
-    #         img0: [descriptor1, descriptor2, ....],
-    #         img1: [descriptor1, descriptor2, ....],
-    #         ...
-    #     },
-    #     airplanes: {...}
-    #     ...
-    # }
     training_descriptors = load_descriptors(test_or_train='Training', merge_in_class=False)
     test_descriptors = load_descriptors(test_or_train='Test', merge_in_class=False)
 
-    # Keep track of indexes of keypoints which mapped to the same codeword. With this data structure,
-    # we'll be able to easily visualise img patches assigned to the same keyword (step 3.3).
-    # Note that we're restricting ourselfs to the training images only.
-    # map_kp_idxs_to_codewords = {
-    #     cars: [
-    #             {
-    #                 img_id_0: [KeyPoints...],
-    #                 img_id_1: [KeyPoints...],
-    #                 ...
-    #             }, <-- Dict of {img_id: keypoints_list} pairs assigned to codeword 0 from cars class.
-    #             ... same wfor rest of codwords in this class.
-    #     ],
-    #     airplanes: [...]
-    #     ...
-    # }
-    map_kp_idxs_to_codewords = {c_name: [dict() for _ in range(len(codebook[c_name]))] for c_name in CLASSES}
+    # Keep track of indexes of keypoints which mapped to the same codeword. One dictionary of
+    # {img_fname: [keypoints]} pairs per codeword.
+    map_kp_to_codewords = [dict() for _ in range(len(codebook))]
     # We're not interested in small keypoints for the visualisation.
     KEYPOINT_DIAMETER_THRESHOLD = 30
 
     # The same layour for the keypoints.
     # Note that keypoint i of a given image corresponds to descriptor i of that image.
     training_keypoints = load_keypoints(test_or_train='Training', merge_in_class=False)
+    test_keypoints = load_keypoints(test_or_train='Test', merge_in_class=False)
 
     training_histogram_of_codewords = {c_name: dict() for c_name in CLASSES}
     for img_class, descriptors_files in training_descriptors.items():
         for img_id, img_descriptors in descriptors_files.items():
-            img_histogram, descriptor_to_codeword_map = \
-                gen_histogram_of_codewords(img_descriptors, codebook[img_class])
+            img_histogram, descriptor_to_codeword_map = gen_histogram_of_codewords(img_descriptors, codebook)
 
-            nor_img_histogram = normalise_histogram(img_histogram, codebook[img_class], l1_norm)
+            nor_img_histogram = normalise_histogram(img_histogram, codebook, l1_norm)
             training_histogram_of_codewords[img_class][img_id] = nor_img_histogram
 
             # Use the fact that there is a 1:1 mapping between descriptor and kypoint idxs.
+            # Use full img path, instead of id, for easier visualisation.
+            img_fname = f'{DATASET_DIR}/Training/{img_class}/{img_id}.jpg'
             for word_idx, keypoint_idxs_list in enumerate(descriptor_to_codeword_map):
-                filtered_keypoint_idxs_list = [kp_idx for kp_idx in keypoint_idxs_list
-                    if training_keypoints[img_class][img_id][kp_idx][1] > KEYPOINT_DIAMETER_THRESHOLD]
-                map_kp_idxs_to_codewords[img_class][word_idx][img_id] = filtered_keypoint_idxs_list
+                # Get rid of small keypoints.
+                filtered_keypoints = []
+                for kp_idx in keypoint_idxs_list:
+                    # We have saved the keypoint as [(kp_x, (kp_y), kp_diameter]
+                    kp = training_keypoints[img_class][img_id][kp_idx]
+                    if kp[1] > KEYPOINT_DIAMETER_THRESHOLD:
+                        filtered_keypoints.append(kp)
+
+                map_kp_to_codewords[word_idx][img_fname] = filtered_keypoints
 
             # Save each image histogram to a seperate file
-            fname = f'{img_id}_histogram.npy'
-            with open(f'{DATASET_DIR}/Training/{img_class}/{fname}', 'wb') as f:
+            hist_fname = f'{img_id}_histogram.npy'
+            with open(f'{DATASET_DIR}/Training/{img_class}/{hist_fname}', 'wb') as f:
                 np.save(f, nor_img_histogram)
 
     # Same for Test images.
     test_histogram_of_codewords = {c_name: dict() for c_name in CLASSES}
     for img_class, images in test_descriptors.items():
         for img_id, img_descriptors in images.items():
-            img_histogram, _ = gen_histogram_of_codewords(img_descriptors, codebook[img_class])
+            img_histogram, descriptor_to_codeword_map = gen_histogram_of_codewords(img_descriptors, codebook)
 
-            nor_img_histogram = normalise_histogram(img_histogram, codebook[img_class], l1_norm)
+            nor_img_histogram = normalise_histogram(img_histogram, codebook, l1_norm)
             test_histogram_of_codewords[img_class][img_id] = nor_img_histogram
 
+            # Use the fact that there is a 1:1 mapping between descriptor and kypoint idxs.
+            # Use full img path, instead of id, for easier visualisation.
+            img_fname = f'{DATASET_DIR}/Test/{img_class}/{img_id}.jpg'
+            for word_idx, keypoint_idxs_list in enumerate(descriptor_to_codeword_map):
+                # Get rid of small keypoints.
+                filtered_keypoints = []
+                for kp_idx in keypoint_idxs_list:
+                    # We have saved the keypoint as [(kp_x, (kp_y), kp_diameter]
+                    kp = test_keypoints[img_class][img_id][kp_idx]
+                    if kp[1] > KEYPOINT_DIAMETER_THRESHOLD:
+                        filtered_keypoints.append(kp)
+
+                map_kp_to_codewords[word_idx][img_fname] = filtered_keypoints
+
+            break
             # Save each image histogram to a seperate file
-            fname = f'{img_id}_histogram.npy'
-            with open(f'{DATASET_DIR}/Test/{img_class}/{fname}', 'wb') as f:
+            hist_fname = f'{img_id}_histogram.npy'
+            with open(f'{DATASET_DIR}/Test/{img_class}/{hist_fname}', 'wb') as f:
                 np.save(f, nor_img_histogram)
 
 
     with open('map_kp_idxs_to_codewords.npy', 'wb') as f:
-        np.save(f, map_kp_idxs_to_codewords)
+        np.save(f, map_kp_to_codewords)
     # map_kp_idxs_to_codewords = load_dict_pickle('map_kp_idxs_to_codewords.npy')
 
-    # Put most matched codewords and the corresponding keypoint_idxs to the front.
-    for img_class in map_kp_idxs_to_codewords.keys():
-        num_of_kps = lambda d : np.sum([len(v) for v in d.values()])
-        map_kp_idxs_to_codewords[img_class].sort(key=num_of_kps, reverse=True)
-
+    # Put most matched codewords and the corresponding keypoints to the front.
+    # Note that we don't care towhich specific codeword given keypoints match, we just care about
+    # the fact that they match to the same one.
+    num_of_kps = lambda d : np.sum([len(v) for v in d.values()])
+    map_kp_to_codewords.sort(key=num_of_kps, reverse=True)
 
     # Step 3.3 Visualize some image patches that are assigned to the same codeword.
-    visualize_similar_patches(map_kp_idxs_to_codewords, training_keypoints,
-                              imgs_path=f'{DATASET_DIR}/Training/')
+    visualize_similar_patches(map_kp_to_codewords)
