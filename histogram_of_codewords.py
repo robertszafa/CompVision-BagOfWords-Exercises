@@ -61,8 +61,8 @@ def draw_keypoint(img_fname, kp_x, kp_y, kp_diameter, title=''):
     cv2.imshow(title, kp)
     cv2.waitKey(0)
 
-def visualize_similar_patches(map_kp_idxs_to_codewords):
-    for word_idx, img_fname_keypoints_pairs in enumerate(map_kp_idxs_to_codewords):
+def visualize_similar_patches(map_kps_to_codewords):
+    for word_idx, img_fname_keypoints_pairs in enumerate(map_kps_to_codewords):
         for img_fname, kps in img_fname_keypoints_pairs.items():
             for kp in kps:
                 title = title=f'{img_fname.split(DATASET_DIR)[1]} --> codeword_{word_idx}'
@@ -92,6 +92,8 @@ def normalise_histogram(img_histogram_of_codewords, img_class_codebook, norm_fun
 
 
 if __name__ == "__main__":
+    start_time = time.time()
+
     codebook = load_codebook()
 
     training_descriptors = load_descriptors(test_or_train='Training', merge_in_class=False)
@@ -99,7 +101,7 @@ if __name__ == "__main__":
 
     # Keep track of indexes of keypoints which mapped to the same codeword. One dictionary of
     # {img_fname: [keypoints]} pairs per codeword.
-    map_kp_to_codewords = [dict() for _ in range(len(codebook))]
+    map_kps_to_codewords = [dict() for _ in range(len(codebook))]
     # We're not interested in small keypoints for the visualisation.
     KEYPOINT_DIAMETER_THRESHOLD = 30
 
@@ -128,7 +130,7 @@ if __name__ == "__main__":
                     if kp[1] > KEYPOINT_DIAMETER_THRESHOLD:
                         filtered_keypoints.append(kp)
 
-                map_kp_to_codewords[word_idx][img_fname] = filtered_keypoints
+                map_kps_to_codewords[word_idx][img_fname] = filtered_keypoints
 
             # Save each image histogram to a seperate file
             hist_fname = f'{img_id}_histogram.npy'
@@ -156,24 +158,26 @@ if __name__ == "__main__":
                     if kp[1] > KEYPOINT_DIAMETER_THRESHOLD:
                         filtered_keypoints.append(kp)
 
-                map_kp_to_codewords[word_idx][img_fname] = filtered_keypoints
+                map_kps_to_codewords[word_idx][img_fname] = filtered_keypoints
 
-            break
             # Save each image histogram to a seperate file
             hist_fname = f'{img_id}_histogram.npy'
             with open(f'{DATASET_DIR}/Test/{img_class}/{hist_fname}', 'wb') as f:
                 np.save(f, nor_img_histogram)
 
 
-    with open('map_kp_idxs_to_codewords.npy', 'wb') as f:
-        np.save(f, map_kp_to_codewords)
-    # map_kp_idxs_to_codewords = load_dict_pickle('map_kp_idxs_to_codewords.npy')
+    # with open('map_kps_to_codewords.npy', 'wb') as f:
+    #     np.save(f, map_kps_to_codewords)
+    # with open('map_kps_to_codewords.npy', 'rb') as f:
+    #     map_kps_to_codewords = np.load(f, allow_pickle=True)
 
     # Put most matched codewords and the corresponding keypoints to the front.
     # Note that we don't care towhich specific codeword given keypoints match, we just care about
     # the fact that they match to the same one.
     num_of_kps = lambda d : np.sum([len(v) for v in d.values()])
-    map_kp_to_codewords.sort(key=num_of_kps, reverse=True)
+    map_kps_to_codewords.sort(key=num_of_kps, reverse=True)
 
     # Step 3.3 Visualize some image patches that are assigned to the same codeword.
-    visualize_similar_patches(map_kp_to_codewords)
+    visualize_similar_patches(map_kps_to_codewords)
+
+    print(f'Finished program in {(time.time() - start_time)/60} minutes.')
