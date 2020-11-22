@@ -4,7 +4,8 @@ import time
 import sys
 import re
 
-from helper import load_descriptors, load_keypoints, load_codebook, DATASET_DIR, CLASSES
+from helper import load_descriptors, load_keypoints, load_pickled_list, save_to_pickle
+from helper import DATASET_DIR, CLASSES, CODEBOOK_FILE_TRAIN, MAP_KPS_TO_CODEWORD_FILE
 
 ###########################################################################
 # Step 2. Image representation with a histogram of codewords
@@ -94,7 +95,7 @@ def normalise_histogram(img_histogram_of_codewords, img_class_codebook, norm_fun
 if __name__ == "__main__":
     start_time = time.time()
 
-    codebook = load_codebook()
+    codebook = load_pickled_list(CODEBOOK_FILE_TRAIN)
 
     training_descriptors = load_descriptors(test_or_train='Training', merge_in_class=False)
     test_descriptors = load_descriptors(test_or_train='Test', merge_in_class=False)
@@ -133,9 +134,8 @@ if __name__ == "__main__":
                 map_kps_to_codewords[word_idx][img_fname] = filtered_keypoints
 
             # Save each image histogram to a seperate file
-            hist_fname = f'{img_id}_histogram.npy'
-            with open(f'{DATASET_DIR}/Training/{img_class}/{hist_fname}', 'wb') as f:
-                np.save(f, nor_img_histogram)
+            hist_fname = f'{DATASET_DIR}/Training/{img_class}/{img_id}_histogram.npy'
+            save_to_pickle(hist_fname, nor_img_histogram)
 
     # Same for Test images.
     test_histogram_of_codewords = {c_name: dict() for c_name in CLASSES}
@@ -161,15 +161,12 @@ if __name__ == "__main__":
                 map_kps_to_codewords[word_idx][img_fname] = filtered_keypoints
 
             # Save each image histogram to a seperate file
-            hist_fname = f'{img_id}_histogram.npy'
-            with open(f'{DATASET_DIR}/Test/{img_class}/{hist_fname}', 'wb') as f:
-                np.save(f, nor_img_histogram)
+            hist_fname = f'{DATASET_DIR}/Test/{img_class}/{img_id}_histogram.npy'
+            save_to_pickle(hist_fname, nor_img_histogram)
 
 
-    # with open('map_kps_to_codewords.npy', 'wb') as f:
-    #     np.save(f, map_kps_to_codewords)
-    # with open('map_kps_to_codewords.npy', 'rb') as f:
-    #     map_kps_to_codewords = np.load(f, allow_pickle=True)
+    map_kps_to_codewords = load_pickled_list(MAP_KPS_TO_CODEWORD_FILE)
+    # save_to_pickle(MAP_KPS_TO_CODEWORD_FILE, map_kps_to_codewords)
 
     # Put most matched codewords and the corresponding keypoints to the front.
     # Note that we don't care towhich specific codeword given keypoints match, we just care about

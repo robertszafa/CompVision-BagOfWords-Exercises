@@ -5,7 +5,7 @@ import time
 import re
 import os
 
-from helper import load_codebook, load_descriptors, load_keypoints, DATASET_DIR, CLASSES, CODEBOOK_FILE_TRAIN
+from helper import load_descriptors, DATASET_DIR, CLASSES, CODEBOOK_FILE_TRAIN
 
 
 ################################################################################

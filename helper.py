@@ -15,11 +15,10 @@ CLASSES = [
     'faces',
     'keyboard',
 ]
-
 TRAINING_PATH  = f'{DATASET_DIR}/Training'
 TEST_PATH = f'{DATASET_DIR}/Test'
-
 CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
+MAP_KPS_TO_CODEWORD_FILE = f'{DATASET_DIR}/map_kps_to_codewords.npy'
 
 def training_histogram_keys():
     return [(CLASSES[i], f'{TRAINING_PATH}/{CLASSES[i]}') for i in range(len(CLASSES))]
@@ -31,9 +30,9 @@ def test_histogram_keys():
 # Read binary files
 ################################################################################
 
-def load_codebook() -> List:
+def load_pickled_list(fname) -> List:
     codebook = []
-    with open(CODEBOOK_FILE_TRAIN, 'rb') as f:
+    with open(fname, 'rb') as f:
         codebook = np.load(f, allow_pickle=True)
     return codebook
 
@@ -166,3 +165,7 @@ def load_keypoints(test_or_train, merge_in_class=False):
 
     return keypoints
 
+
+def save_to_pickle(pickle_fname, data):
+    with open(pickle_fname, 'wb') as f:
+        np.save(f, data)
