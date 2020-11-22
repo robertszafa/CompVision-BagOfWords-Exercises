@@ -17,8 +17,7 @@ def euclidean_distance(test_hist, train_hist) -> int:
     return math.sqrt(total)
 
 def apply_nearest_neighbour(test_hist, training_hist_by_classes, limit=None):
-    # Takes a single training
-
+    # Computes the nearest neighbour of the different class to the test histogram
     result = collections.defaultdict(int)
 
     for class_type in training_hist_by_classes:
@@ -30,8 +29,22 @@ def apply_nearest_neighbour(test_hist, training_hist_by_classes, limit=None):
     return result
 
 
-def label_classification(training_histogram, test_histogram):
-    return
+def label_classification(test_hist, train_hist, limit=None):
+    # Takes one test histogram of an image and multiple histograms of different classes
+    # Compute the nearest neighbour and classify or label the test as one of the class
+    result = apply_nearest_neighbour(test_hist, train_hist, limit)
+
+    label = None
+
+    for key in result:
+        if not label:
+            label = (key[0], result[key])
+        elif result[key] < label[1]:
+            label = (key[0], result[key])
+        out = f'Class Type: {key[0]}- Values: {result[key]}'
+        print(out)
+
+    return label
 
 
 if __name__ == "__main__":
@@ -39,25 +52,31 @@ if __name__ == "__main__":
 
     # Test Histogram
     all_test_keys = hp.test_histogram_keys()
-    test_airplanes_key = all_test_keys[0]
-    test_car_key = all_test_keys[1]
 
     # Train Histogram
     all_train_keys = hp.training_histogram_keys()
 
-    # Load airplane test histogram and load all class types for training histogram
-    airplanes_test_hist = hp.read_single_histograms(test_path, test_airplanes_key)
+    # Load all trainign histogram by multiple classes
+    all_test_hist = hp.read_all_histograms(test_path)
     all_training_hist = hp.read_all_histograms(training_path)
 
-    # Match single test airplane image vs multiple of all classes from training histogram
-    airplane_single_hist_test = airplanes_test_hist[test_airplanes_key][1]
-    
-    result = apply_nearest_neighbour(airplane_single_hist_test, all_training_hist)
-    
-    for key in result:
-        out = f'Class Type: {key[0]}- Values: {result[key]}'
-        print(out)
+    print(all_test_keys)
 
+    car_test_key = all_test_keys[1]
+    single_car = all_test_hist[car_test_key][3] 
+
+    dog_test_key = all_test_keys[2]
+    single_dog = all_test_hist[dog_test_key][5]
+
+    face_test_key = all_test_keys[3]
+    single_face = all_test_hist[face_test_key][2]
+
+    keyboard_test_key = all_test_keys[4]
+    single_keyboard = all_test_hist[keyboard_test_key][3]
+    
+    # Classification
+    result = label_classification(single_keyboard, all_training_hist, limit=50)
+    print(result)
 
 # useful sources
 # https://www.pyimagesearch.com/2014/07/14/3-ways-compare-histograms-using-opencv-python/
