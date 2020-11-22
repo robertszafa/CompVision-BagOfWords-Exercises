@@ -5,7 +5,7 @@ import time
 import re
 import os
 
-from helper import load_descriptors, DATASET_DIR, CLASSES, CODEBOOK_FILE_TRAIN
+from helper import load_descriptors, save_to_pickle, DATASET_DIR, CLASSES, CODEBOOK_FILE_TRAIN, SMALL_CODEBOOK_FILE_TRAIN
 
 
 ################################################################################
@@ -74,9 +74,10 @@ if __name__ == "__main__":
 
     # Generate one codebook for all classes.
     codebook = gen_dictionary(descriptors)
+    save_to_pickle(CODEBOOK_FILE_TRAIN, codebook)
 
-    with open(CODEBOOK_FILE_TRAIN, 'wb') as f:
-        np.save(f, codebook)
+    small_codebook = gen_dictionary(descriptors, num_words=20)
+    save_to_pickle(SMALL_CODEBOOK_FILE_TRAIN, small_codebook)
 
 
     print(f'Finished program in {(time.time() - start_time)/60} minutes.')
