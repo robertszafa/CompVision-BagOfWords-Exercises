@@ -34,19 +34,19 @@ def find_nearest_cluster_idx(descriptor, clusters):
     return min_idx
 
 ## Step 3.2
-def gen_histogram_of_codewords(img_descriptors, img_class_codebook):
+def gen_histogram_of_codewords(img_descriptors, codebook):
     """
     Generate a histogram of codewords for a single image, which is represented by a list of features.
     """
     # Initially, each image will have a count of 0 for each codeword.
-    histogram_of_codewords = [0 for _ in range(len(img_class_codebook))]
+    histogram_of_codewords = [0 for _ in range(len(codebook))]
 
-    descriptor_to_codeword_map = [[] for _ in range(len(img_class_codebook))]
+    descriptor_to_codeword_map = [[] for _ in range(len(codebook))]
     map_descriptor = lambda word_idx, descriptor_idx : \
                       descriptor_to_codeword_map[word_idx].append(descriptor_idx)
 
     for idx, descriptor in enumerate(img_descriptors):
-        closest_cluster_idx = find_nearest_cluster_idx(descriptor, img_class_codebook)
+        closest_cluster_idx = find_nearest_cluster_idx(descriptor, codebook)
         histogram_of_codewords[closest_cluster_idx] += 1
 
         map_descriptor(closest_cluster_idx, idx)
@@ -73,14 +73,14 @@ def visualize_similar_patches(map_kps_to_codewords):
 def l1_norm(vec):
     return np.sum(abs(vec))
 
-def normalise_histogram(img_histogram_of_codewords, img_class_codebook, norm_func):
-    assert len(img_histogram_of_codewords) == len(img_class_codebook)
+def normalise_histogram(img_histogram_of_codewords, codebook, norm_func):
+    assert len(img_histogram_of_codewords) == len(codebook)
 
     # Normalise the histogram using the passed in norm function.
     # The norm value of the codeword becomes the key and the frequency of the codeword becomes the value.
     normalised_histogram_of_codewords = {}
     for word_idx in range(len(img_histogram_of_codewords)):
-        norm = norm_func(img_class_codebook[word_idx])
+        norm = norm_func(codebook[word_idx])
 
         if norm in normalised_histogram_of_codewords:
             # Two histograms could have the same norm. Unlikely, but if it does occur,

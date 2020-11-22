@@ -18,6 +18,7 @@ CLASSES = [
 TRAINING_PATH  = f'{DATASET_DIR}/Training'
 TEST_PATH = f'{DATASET_DIR}/Test'
 CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
+SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small.npy'
 MAP_KPS_TO_CODEWORD_FILE = f'{DATASET_DIR}/map_kps_to_codewords.npy'
 
 def training_histogram_keys():
@@ -31,10 +32,10 @@ def test_histogram_keys():
 ################################################################################
 
 def load_pickled_list(fname) -> List:
-    codebook = []
+    l = []
     with open(fname, 'rb') as f:
-        codebook = np.load(f, allow_pickle=True)
-    return codebook
+        l = np.load(f, allow_pickle=True)
+    return l.tolist()
 
 def get_histogram_paths():
     training_histogram_paths = collections.defaultdict(list)
