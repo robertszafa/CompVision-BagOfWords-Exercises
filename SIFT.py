@@ -8,13 +8,11 @@ import math
 import time
 import os
 import numpy as np
-
 from functools import cmp_to_key
 
+from helper import load_images_in_directory, DATASET_DIR, CLASSES
 
-################################################################################
-# Helper functions
-################################################################################
+
 def convolution(img, kernel, average=False):
     """
     Convolute an image with a kernel. If the passed in image has 3 colour channels,
@@ -600,31 +598,8 @@ def extract_SIFT_features(img, sigma=1.6):
     return descriptors, keypoints_used
 
 
-
-################################################################################
-# Helper functions
-################################################################################
-def load_images_in_directory(path):
-    images = {}
-    for filename in os.listdir(path):
-        img = cv2.imread(os.path.join(path, filename), cv2.IMREAD_GRAYSCALE)
-        if img is not None:
-            images[filename] = img
-
-    return images
-
-
 if __name__ == "__main__":
     start_time = time.time()
-
-    DATASET_DIR = 'COMP338_Assignment1_Dataset'
-    CLASSES = [
-        'airplanes',
-        'cars',
-        'dog',
-        'faces',
-        'keyboard',
-    ]
 
     # Extract SIFT descriptors from training and test images. Store the descriptors in seperate
     # binary files based on type and class, e.g. trainig_descriptors/cars, test_descriptors/cars, ..

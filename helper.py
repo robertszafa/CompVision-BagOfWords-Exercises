@@ -1,5 +1,6 @@
 import numpy as np
-import fnmatch, os, collections
+import cv2
+import fnmatch, os, collections, re
 from typing import List, Dict, Set
 
 ################################################################################
@@ -19,7 +20,6 @@ TRAINING_PATH  = f'{DATASET_DIR}/Training'
 TEST_PATH = f'{DATASET_DIR}/Test'
 
 CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
-CODEBOOK_FILE_TEST = f'{DATASET_DIR}/Test/codebook.npy'
 
 def training_histogram_keys():
     return [(CLASSES[i], f'{TRAINING_PATH}/{CLASSES[i]}') for i in range(len(CLASSES))]
@@ -31,10 +31,11 @@ def test_histogram_keys():
 # Read binary files
 ################################################################################
 
-def read_codebook() -> List[Dict[str, List[int]]]:
-    load_training_codebook = np.load(CODEBOOK_FILE_TRAIN, allow_pickle=True)
-    load_test_codebook = np.load(CODEBOOK_FILE_TEST, allow_pickle=True)
-    return load_training_codebook.tolist(), load_test_codebook.tolist()
+def load_codebook() -> List:
+    codebook = []
+    with open(CODEBOOK_FILE_TRAIN, 'rb') as f:
+        codebook = np.load(f, allow_pickle=True)
+    return codebook
 
 def get_histogram_paths():
     training_histogram_paths = collections.defaultdict(list)
@@ -74,3 +75,94 @@ def read_single_histograms(histogram_file_paths, filter_key=None):
         histogram_values[filter_key].append(load_histograms_values.tolist())
 
     return histogram_values if filter_key else read_all_histograms(histogram_file_paths)
+
+def load_images_in_directory(path) -> Dict[str, List]:
+    images = {}
+    for filename in os.listdir(path):
+        img = cv2.imread(os.path.join(path, filename), cv2.IMREAD_GRAYSCALE)
+        if img is not None:
+            images[filename] = img
+
+    return images
+
+def load_np_pickles_in_directory(path, regex=r'.*.(npy|npc)'):
+    """
+    Given a {path} to a directory load all numpy pickle files in that directory that match {regex}.
+    Return a dictionary, {fname: np.load(fname)}, where fname includes only the part before '.' and '_'.
+    """
+    result = {}
+    for filename in os.listdir(path):
+        if re.match(regex, filename):
+            # Get rid of file extensions and (keypoints|descriptors) annotations.
+            key = filename.split('.')[0].split('_')[0]
+            result[key] = np.load(path + filename, allow_pickle=True)
+
+    return result
+
+def load_descriptors(test_or_train, merge_in_class=False):
+    """
+    Read the descriptors from the {test_or_train} dataset.
+    Return a dictionary with the class names as keys.
+    If {merge_in_class} is True, then a single class will have a list of all descriptors as the value.
+    Otherwise, it will have a list of dictionaries as values, where the dictionaries have
+    the individual img filename as key and their list of descriptors as values.
+
+    if not merge_in_class:
+    descriptors = {
+        cars: {
+            img0: [descriptor1, descriptor2, ....],
+            img1: [descriptor1, descriptor2, ....],
+            ...
+        },
+        airplanes: {...}
+        ...
+    }
+    """
+    descriptors = {}
+    for class_name in CLASSES:
+        match_descriptors = r'.*_descriptors' + re.escape('.npy')
+        load_from = f'{DATASET_DIR}/{test_or_train}/{class_name}/'
+        descriptors_dict = load_np_pickles_in_directory(load_from, match_descriptors)
+
+        if merge_in_class:
+            # Merge all img descriptors from tge same class into one list.
+            # We ignore the individual img file names here.
+            class_descriptors = []
+            for img_descriptors in descriptors_dict.values():
+                for d in img_descriptors:
+                    class_descriptors.append(d)
+
+            descriptors[class_name] = class_descriptors
+        else:
+            descriptors[class_name] = descriptors_dict
+
+    return descriptors
+
+def load_keypoints(test_or_train, merge_in_class=False):
+    """
+    Read the keypoints from the {test_or_train} dataset.
+    Return a dictionary with the class names as keys.
+    If {merge_in_class} is True, then a single class will have a list of all keypoints as the value.
+    Otherwise, it will have a list of dictionaries as values, where the dictionaries have
+    the individual img filename as key and their list of keypoints as values.
+    """
+    keypoints = {}
+    for class_name in CLASSES:
+        match_keypoints = r'.*_keypoints' + re.escape('.npy')
+        load_from = f'{DATASET_DIR}/{test_or_train}/{class_name}/'
+        keypoints_dict = load_np_pickles_in_directory(load_from, match_keypoints)
+
+        if merge_in_class:
+            # Merge all img keypoints from tge same class into one list.
+            # We ignore the individual img file names here.
+            class_keypoints = []
+            for img_keypoints in keypoints_dict.values():
+                for d in img_keypoints:
+                    class_keypoints.append(d)
+
+            keypoints[class_name] = class_keypoints
+        else:
+            keypoints[class_name] = keypoints_dict
+
+    return keypoints
+
