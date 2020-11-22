@@ -49,7 +49,7 @@ def gen_dictionary(feature_descriptors, num_words=500):
     # Use the L1 norm to check for closeness.
     # l1_norm = lambda v : np.sum(abs(v))
     no_change = False
-    max_iter = 70
+    max_iter = 100
     iteration = 0
     while not no_change and iteration < max_iter:
         iteration += 1
@@ -144,12 +144,6 @@ def load_keypoints(test_or_train, merge_in_class=False):
     return keypoints
 
 
-def read_codebook() -> List[Dict[str, List[int]]]:
-    load_training_codebook = np.load(CODEBOOK_FILE_TRAIN, allow_pickle=True)
-    load_test_codebook = np.load(CODEBOOK_FILE_TEST, allow_pickle=True)
-    return load_training_codebook.tolist(), load_test_codebook.tolist()
-
-
 ################################################################################
 # Main
 ################################################################################
@@ -160,15 +154,16 @@ if __name__ == "__main__":
     # training_descriptors will hold ['class_name': descriptors_list] pairs
     training_descriptors = load_descriptors(test_or_train='Training', merge_in_class=True)
 
-    # Generate a codebook for each class.
-    codebook = {}
-    for img_class, descriptors in training_descriptors.items():
-        codebook[img_class] = gen_dictionary(descriptors)
-        print(f'Finished {img_class} at minute {(time.time() - start_time)/60}.')
+    # A single list for all feature descriptors from all classes.
+    all_descriptors = []
+    for descriptors in training_descriptors.values():
+        all_descriptors += descriptors
+
+    # Generate one codebook for all classes.
+    codebook = gen_dictionary(descriptors)
 
     with open(CODEBOOK_FILE_TRAIN, 'wb') as f:
         np.save(f, codebook)
 
 
     print(f'Finished program in {(time.time() - start_time)/60} minutes.')
-
