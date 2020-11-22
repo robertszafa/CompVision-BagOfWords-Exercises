@@ -16,11 +16,19 @@ def euclidean_distance(test_hist, train_hist) -> int:
         total += pow(test_hist[codeword_freq] - train_hist[codeword_freq], 2)
     return math.sqrt(total)
 
-def apply_nearest_neighbour(training_histogram, test_histogram):
-    result = collections.defaultdict(dict)
-    for class_type in gc.CLASSES:
-        result[class_type] = euclidean_distance(training_histogram[class_type], test_histogram[class_type])
+def apply_nearest_neighbour(test_hist, training_hist_by_classes, limit=None):
+    # Takes a single training
+
+    result = collections.defaultdict(int)
+
+    for class_type in training_hist_by_classes:
+        n = limit if limit else len(training_hist_by_classes[class_type])
+        for hist in range(n):
+            train_hist = training_hist_by_classes[class_type][hist]
+            result[class_type] += euclidean_distance(test_hist, train_hist)
+
     return result
+
 
 def label_classification(training_histogram, test_histogram):
     return
@@ -32,26 +40,24 @@ if __name__ == "__main__":
     # Test Histogram
     all_test_keys = hp.test_histogram_keys()
     test_airplanes_key = all_test_keys[0]
+    test_car_key = all_test_keys[1]
 
     # Train Histogram
     all_train_keys = hp.training_histogram_keys()
-    train_airplane_key = all_train_keys[0]
 
     # Load airplane test histogram and load all class types for training histogram
     airplanes_test_hist = hp.read_single_histograms(test_path, test_airplanes_key)
-    all_training_hist = [hp.read_single_histograms(training_path,all_train_keys[i]) for i in range(len(all_train_keys))]
+    all_training_hist = hp.read_all_histograms(training_path)
 
-    print(len(all_training_hist[0][train_airplane_key])) # 74 airplane training hist
+    # Match single test airplane image vs multiple of all classes from training histogram
+    airplane_single_hist_test = airplanes_test_hist[test_airplanes_key][1]
+    
+    result = apply_nearest_neighbour(airplane_single_hist_test, all_training_hist)
+    
+    for key in result:
+        out = f'Class Type: {key[0]}- Values: {result[key]}'
+        print(out)
 
-    # Match single test airplane image vs a single of all classes from training histogram
-    test_airplane = airplanes_test_hist[test_airplanes_key][0]
-
-    print(airplanes_test_hist[test_airplanes_key][0])
-    print(airplanes_test_hist[test_airplanes_key][1])
-
-    # for i in range(len(all_training_hist)):
-    #     a = all_training_hist[i][all_train_keys[i]][0]
-    #     print(euclidean_distance(test_airplane, a))
 
 # useful sources
 # https://www.pyimagesearch.com/2014/07/14/3-ways-compare-histograms-using-opencv-python/
