@@ -21,21 +21,26 @@ CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
 SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small.npy'
 MAP_KPS_TO_CODEWORD_FILE = f'{DATASET_DIR}/map_kps_to_codewords.npy'
 
-def training_histogram_keys():
+
+################################################################################
+# Get directory or file paths
+################################################################################
+
+def get_training_histogram_keys():
     return [(CLASSES[i], f'{TRAINING_PATH}/{CLASSES[i]}') for i in range(len(CLASSES))]
 
-def test_histogram_keys():
+def get_test_histogram_keys():
     return [(CLASSES[i], f'{TEST_PATH}/{CLASSES[i]}') for i in range(len(CLASSES))]
 
-################################################################################
-# Read binary files
-################################################################################
+def get_image_paths(image_format: str, path=TEST_PATH):
+    image_paths = collections.defaultdict(list)
 
-def load_pickled_list(fname) -> List:
-    l = []
-    with open(fname, 'rb') as f:
-        l = np.load(f, allow_pickle=True)
-    return l.tolist()
+    for class_name in CLASSES:
+        directory = f'{path}/{class_name}/'
+        for file in os.listdir(directory):
+            if fnmatch.fnmatch(file, f'*.{image_format}'):
+                image_paths[class_name].append(f'{directory}{file}')
+    return image_paths
 
 def get_histogram_paths():
     training_histogram_paths = collections.defaultdict(list)
@@ -53,6 +58,16 @@ def get_histogram_paths():
                 test_histogram_paths[(class_name, test_directory)].append(file)
 
     return training_histogram_paths, test_histogram_paths
+
+################################################################################
+# Read binary files
+################################################################################
+
+def load_pickled_list(fname) -> List:
+    l = []
+    with open(fname, 'rb') as f:
+        l = np.load(f, allow_pickle=True)
+    return l.tolist()
 
 
 def load_all_histograms(histograms_file_paths):

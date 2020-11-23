@@ -1,6 +1,7 @@
 from typing import List, Dict
-import collections
-import math
+import collections, math
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import generate_codebook as gc
 import helper as hp
 
@@ -40,7 +41,6 @@ def label_classification(test_hist: dict, train_hist: dict, limit=None):
             label = (key[0], result[key])
         elif result[key] < label[1]:
             label = (key[0], result[key])
-        out = f'Class Type: {key[0]}- Values: {result[key]}'
         
     return label
 
@@ -84,7 +84,7 @@ def apply_intersection(test_hist, training_hist_by_classes, limit=None) -> Dict[
     return result
 
 def label_histogram_by_intersection(test_hist, train_hist, limit=None):
-        # Classify one test histogram given multiple training histograms of multiple classes
+    # Classify one test histogram given multiple training histograms of multiple classes
     result = apply_intersection(test_hist, train_hist, limit)
     label = None
 
@@ -93,7 +93,6 @@ def label_histogram_by_intersection(test_hist, train_hist, limit=None):
             label = (key[0], result[key])
         elif result[key] > label[1]:
             label = (key[0], result[key])
-        out = f'Class Type: {key[0]}- Values: {result[key]}'
     return label
 
 def label_by_intersection(limit=None):
@@ -114,9 +113,17 @@ def label_by_intersection(limit=None):
         percentage_correct = int((correct_label / amount) * 100)
         print(f'{class_type[0]} correct label is {percentage_correct}%')
 
+def display_image_with_label(label, image_path):
+    img = mpimg.imread(image_path)
+    imgplot = plt.imshow(img)
+    plt.title(label)
+    plt.show()
+
 if __name__ == "__main__":
     # Classification
-    label_by_intersection(10)
+    s = hp.get_image_paths("jpg")
+    img = s['airplanes'][0]
+    display_image_with_label("airplanes", img)
 
 # useful sources
 # https://www.pyimagesearch.com/2014/07/14/3-ways-compare-histograms-using-opencv-python/
