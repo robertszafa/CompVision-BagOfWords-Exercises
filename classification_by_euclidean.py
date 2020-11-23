@@ -8,6 +8,8 @@ import helper as hp
 # Step 4. Classification
 ################################################################################
 
+# Refactor intersection into one file once classification is done
+
 def euclidean_distance(test_hist, train_hist) -> int:
     total = 0
     for i, codeword_freq in enumerate(test_hist):
@@ -57,8 +59,7 @@ def label_all_test_images(limit=None):
     images_and_labels = collections.defaultdict(list)
 
     for class_type in all_test_hist:
-        correct_label = 0
-        amount = 0
+        correct_label, amount = 0, 0
         for hist in all_test_hist[class_type]:
             label = label_classification(hist, all_training_hist, limit)
             images_and_labels[class_type].append((label[0], test_images_dir[class_type][amount]))
