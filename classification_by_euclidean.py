@@ -2,6 +2,7 @@ from typing import List, Dict
 import collections, math
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import numpy as np
 import generate_codebook as gc
 import helper as hp
 
@@ -14,6 +15,20 @@ def display_image_with_label(label, image_path):
     imgplot = plt.imshow(img)
     plt.title(label)
     plt.show()
+
+def display_multiple_image_with_labels(class_type, images_and_labels):
+    rows = 2 
+    cols = len(images_and_labels) // 2
+
+    figure, ax = plt.subplots(nrows=rows, ncols=cols)
+    for i, obj in enumerate(images_and_labels):
+        img = mpimg.imread(obj[1])
+        ax.ravel()[i].imshow(img)
+        ax.ravel()[i].set_title(obj[0])
+        ax.ravel()[i].set_axis_off()
+    plt.tight_layout()
+    plt.show()
+
 
 ################################################################################
 # Step 4. Classification
@@ -59,18 +74,31 @@ def label_all_test_images(limit=None):
     all_test_hist = hp.load_all_histograms(test_path)
     all_training_hist = hp.load_all_histograms(training_path)
 
+    # Get all the test images directory
+    test_images_dir = hp.get_image_paths("jpg")
+
+    # display images with classified label
+    images_and_labels = collections.defaultdict(list)
+
     for class_type in all_test_hist:
-        correct_label, amount = 0, 0
+        correct_label = 0
+        amount = 0
         for hist in all_test_hist[class_type]:
-            result = label_classification(hist, all_training_hist, limit)
-            amount += 1
-            if result[0] == class_type[0]:
+            label = label_classification(hist, all_training_hist, limit)
+            images_and_labels[class_type].append((label[0], test_images_dir[class_type[0]][amount]))
+            if label[0] == class_type[0]:
                 correct_label += 1
+            amount += 1
         percentage_correct = int((correct_label / amount) * 100)
         print(f'{class_type[0]} correct label is {percentage_correct}%')
+    
+    return images_and_labels
+
 
 if __name__ == "__main__":
     # Classification
     s = hp.get_image_paths("jpg")
-    img = s['airplanes'][0]
-    display_image_with_label("airplanes", img)
+    t = s['airplanes'][0]
+    result = label_all_test_images(50)
+    for key in result:
+        display_multiple_image_with_labels(key, result[key])
