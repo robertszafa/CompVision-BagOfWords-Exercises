@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import cv2
 import fnmatch, os, collections, re
 from typing import List, Dict, Set
@@ -45,7 +47,7 @@ def get_image_paths(image_format: str, path=TEST_PATH):
                 image_paths[(class_name, directory)].append(file)
     return image_paths
 
-def get_histogram_paths(normal=True):
+def get_histogram_paths(normal=False):
     training_histogram_paths = collections.defaultdict(list)
     test_histogram_paths = collections.defaultdict(list)
 
@@ -188,3 +190,29 @@ def load_keypoints(test_or_train, merge_in_class=False):
 def save_to_pickle(pickle_fname, data):
     with open(pickle_fname, 'wb') as f:
         np.save(f, data)
+
+
+################################################################################
+# Result visualisations
+################################################################################
+
+def display_image_with_label(label, image_path):
+    img = mpimg.imread(image_path)
+    imgplot = plt.imshow(img)
+    plt.title(label)
+    plt.show()
+
+def display_multiple_image_with_labels(class_type, images_and_labels):
+    rows = 2 
+    cols = len(images_and_labels) // 2
+    figure, ax = plt.subplots(nrows=rows, ncols=cols)
+
+    for i, image_label_object in enumerate(images_and_labels):
+        img = mpimg.imread(f'{class_type[1]}/{image_label_object[1]}')
+        label = f'{image_label_object[0]} \n {image_label_object[1]}'
+        ax.ravel()[i].imshow(img)
+        ax.ravel()[i].set_title(label)
+        ax.ravel()[i].set_axis_off()
+
+    plt.tight_layout()
+    plt.show()
