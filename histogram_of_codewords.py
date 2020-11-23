@@ -5,10 +5,10 @@ import sys
 import re
 
 from helper import load_descriptors, load_keypoints, load_pickled_list, save_to_pickle
-from helper import DATASET_DIR, CLASSES, CODEBOOK_FILE_TRAIN, MAP_KPS_TO_CODEWORD_FILE
+from helper import DATASET_DIR, CLASSES, CODEBOOK_FILE_TRAIN, SMALL_CODEBOOK_FILE_TRAIN, MAP_KPS_TO_CODEWORD_FILE, MAP_KPS_TO_SMALL_CODEWORD_FILE
 
 ###########################################################################
-# Step 2. Image representation with a histogram of codewords
+# Step 3. Image representation with a histogram of codewords
 ################################################################################
 ## Step 3.1
 def euclidean_distance(vec1, vec2):
@@ -71,7 +71,7 @@ def visualize_similar_patches(map_kps_to_codewords):
 
 ## Step 3.4
 def l1_norm(vec):
-    return np.sum(abs(vec))
+    return np.sum([abs(val) for val in vec])
 
 def normalise_histogram(img_histogram_of_codewords, codebook, norm_func):
     assert len(img_histogram_of_codewords) == len(codebook)
@@ -95,7 +95,8 @@ def normalise_histogram(img_histogram_of_codewords, codebook, norm_func):
 if __name__ == "__main__":
     start_time = time.time()
 
-    codebook = load_pickled_list(CODEBOOK_FILE_TRAIN)
+    # codebook = load_pickled_list(CODEBOOK_FILE_TRAIN)
+    codebook = load_pickled_list(SMALL_CODEBOOK_FILE_TRAIN)
 
     training_descriptors = load_descriptors(test_or_train='Training', merge_in_class=False)
     test_descriptors = load_descriptors(test_or_train='Test', merge_in_class=False)
@@ -134,7 +135,7 @@ if __name__ == "__main__":
                 map_kps_to_codewords[word_idx][img_fname] = filtered_keypoints
 
             # Save each image histogram to a seperate file
-            hist_fname = f'{DATASET_DIR}/Training/{img_class}/{img_id}_histogram.npy'
+            hist_fname = f'{DATASET_DIR}/Training/{img_class}/{img_id}_histogram_small.npy'
             save_to_pickle(hist_fname, nor_img_histogram)
 
     # Same for Test images.
@@ -161,12 +162,15 @@ if __name__ == "__main__":
                 map_kps_to_codewords[word_idx][img_fname] = filtered_keypoints
 
             # Save each image histogram to a seperate file
-            hist_fname = f'{DATASET_DIR}/Test/{img_class}/{img_id}_histogram.npy'
+            hist_fname = f'{DATASET_DIR}/Test/{img_class}/{img_id}_histogram_small.npy'
             save_to_pickle(hist_fname, nor_img_histogram)
 
 
-    map_kps_to_codewords = load_pickled_list(MAP_KPS_TO_CODEWORD_FILE)
+    # map_kps_to_codewords = load_pickled_list(MAP_KPS_TO_CODEWORD_FILE)
     # save_to_pickle(MAP_KPS_TO_CODEWORD_FILE, map_kps_to_codewords)
+
+    # map_kps_to_codewords = load_pickled_list(MAP_KPS_TO_SMALL_CODEWORD_FILE)
+    save_to_pickle(MAP_KPS_TO_SMALL_CODEWORD_FILE, map_kps_to_codewords)
 
     # Put most matched codewords and the corresponding keypoints to the front.
     # Note that we don't care towhich specific codeword given keypoints match, we just care about
