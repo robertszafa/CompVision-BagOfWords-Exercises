@@ -1,35 +1,8 @@
 from typing import List, Dict
 import collections, math
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 import numpy as np
 import generate_codebook as gc
 import helper as hp
-
-################################################################################
-# Result visualisations
-################################################################################
-
-def display_image_with_label(label, image_path):
-    img = mpimg.imread(image_path)
-    imgplot = plt.imshow(img)
-    plt.title(label)
-    plt.show()
-
-def display_multiple_image_with_labels(class_type, images_and_labels):
-    rows = 2 
-    cols = len(images_and_labels) // 2
-    figure, ax = plt.subplots(nrows=rows, ncols=cols)
-
-    for i, image_label_object in enumerate(images_and_labels):
-        img = mpimg.imread(f'{class_type[1]}/{image_label_object[1]}')
-        label = f'{image_label_object[0]} \n {image_label_object[1]}'
-        ax.ravel()[i].imshow(img)
-        ax.ravel()[i].set_title(label)
-        ax.ravel()[i].set_axis_off()
-
-    plt.tight_layout()
-    plt.show()
 
 ################################################################################
 # Step 4. Classification
@@ -77,13 +50,6 @@ def label_all_test_images(limit=None):
     all_test_hist = hp.load_all_histograms(test_path)
     all_training_hist = hp.load_all_histograms(training_path)
 
-    # for key in all_training_hist:
-    #     print(key)
-    #     for hist in all_training_hist[key]:
-    #         l = len(hist)
-    #         if l != 500:
-    #             print("Not 500")
-
     # Get all the test images directory
     test_images_dir = hp.get_image_paths("jpg")
 
@@ -109,6 +75,6 @@ if __name__ == "__main__":
     result = label_all_test_images(limit=50)
     print(result)
     for key in result:
-         display_multiple_image_with_labels(key, result[key])
+         hp.display_multiple_image_with_labels(key, result[key])
 
 
