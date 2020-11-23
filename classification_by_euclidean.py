@@ -37,24 +37,26 @@ def display_multiple_image_with_labels(class_type, images_and_labels):
 
 def euclidean_distance(test_hist, train_hist) -> int:
     total = 0
-    for codeword_freq in train_hist:
-        total += pow(test_hist[codeword_freq] - train_hist[codeword_freq], 2)
+    for i, codeword_freq in enumerate(test_hist):
+        total += pow(test_hist[i] - train_hist[i], 2)
     return math.sqrt(total)
 
 def apply_nearest_neighbour(test_hist, training_hist_by_classes, limit=None) -> Dict[str, int]:
     # Computes the nearest neighbour of the different class to the test histogram
     # limit is used to limit the amount of training histogram to use for each class
     result = collections.defaultdict(int)
+    count = 0
 
     for class_type in training_hist_by_classes:
         n = limit if limit else len(training_hist_by_classes[class_type])
         for hist in range(n):
+            count += 1
             train_hist = training_hist_by_classes[class_type][hist]
             result[class_type] += euclidean_distance(test_hist, train_hist)
 
     return result
 
-def label_classification(test_hist: dict, train_hist: dict, limit=None):
+def label_classification(test_hist: list, train_hist: dict, limit=None):
     # Classify one test histogram given multiple training histograms of multiple classes
     result = apply_nearest_neighbour(test_hist, train_hist, limit)
     label = None
@@ -69,11 +71,18 @@ def label_classification(test_hist: dict, train_hist: dict, limit=None):
 
 def label_all_test_images(limit=None):
     # Get the paths of all histogram files
-    training_path, test_path = hp.get_histogram_paths()
+    test_path, training_path = hp.get_histogram_paths()
 
     # Load all histogram binary file name
     all_test_hist = hp.load_all_histograms(test_path)
     all_training_hist = hp.load_all_histograms(training_path)
+
+    # for key in all_training_hist:
+    #     print(key)
+    #     for hist in all_training_hist[key]:
+    #         l = len(hist)
+    #         if l != 500:
+    #             print("Not 500")
 
     # Get all the test images directory
     test_images_dir = hp.get_image_paths("jpg")
@@ -86,7 +95,6 @@ def label_all_test_images(limit=None):
         amount = 0
         for hist in all_test_hist[class_type]:
             label = label_classification(hist, all_training_hist, limit)
-            print(class_type)
             images_and_labels[class_type].append((label[0], test_images_dir[class_type][amount]))
             if label[0] == class_type[0]:
                 correct_label += 1
@@ -98,8 +106,9 @@ def label_all_test_images(limit=None):
 
 
 if __name__ == "__main__":
-    # Classification
-    s = hp.get_image_paths("jpg")
-    result = label_all_test_images(50)
+    result = label_all_test_images(limit=50)
+    print(result)
     for key in result:
          display_multiple_image_with_labels(key, result[key])
+
+

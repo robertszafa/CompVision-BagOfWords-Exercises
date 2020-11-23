@@ -37,7 +37,7 @@ def label_histogram_by_intersection(test_hist, train_hist, limit=None):
 
 def label_by_intersection(limit=None):
     # Get the paths of all histogram files
-    training_path, test_path = hp.get_histogram_paths()
+    test_path, training_path = hp.get_histogram_paths()
 
     # Load all histogram binary file name
     all_test_hist = hp.load_all_histograms(test_path)

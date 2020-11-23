@@ -21,6 +21,8 @@ CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
 SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small.npy'
 MAP_KPS_TO_CODEWORD_FILE = f'{DATASET_DIR}/map_kps_to_codewords.npy'
 MAP_KPS_TO_SMALL_CODEWORD_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small.npy'
+SMALL_HISTOGRAM_BINARY_FORMAT = "*histogram_small.npy"
+LARGE_HISTOGRAM_BINARY_FORMAT = "*histogram.npy"
 
 
 ################################################################################
@@ -43,22 +45,24 @@ def get_image_paths(image_format: str, path=TEST_PATH):
                 image_paths[(class_name, directory)].append(file)
     return image_paths
 
-def get_histogram_paths():
+def get_histogram_paths(normal=True):
     training_histogram_paths = collections.defaultdict(list)
     test_histogram_paths = collections.defaultdict(list)
+
+    histogram_file_extension = LARGE_HISTOGRAM_BINARY_FORMAT if normal else SMALL_HISTOGRAM_BINARY_FORMAT
 
     for class_name in CLASSES:
         training_directory, test_directory = f'{TRAINING_PATH}/{class_name}', f'{TEST_PATH}/{class_name}'
 
         for file in os.listdir(training_directory):
-            if fnmatch.fnmatch(file, '*histogram.npy'):
+            if fnmatch.fnmatch(file, histogram_file_extension):
                 training_histogram_paths[(class_name, training_directory)].append(file)
 
         for file in os.listdir(test_directory):
-            if fnmatch.fnmatch(file, '*histogram.npy'):
+            if fnmatch.fnmatch(file, histogram_file_extension):
                 test_histogram_paths[(class_name, test_directory)].append(file)
 
-    return training_histogram_paths, test_histogram_paths
+    return test_histogram_paths, training_histogram_paths
 
 ################################################################################
 # Read binary files
