@@ -55,9 +55,8 @@ def get_histogram_paths():
 
     return training_histogram_paths, test_histogram_paths
 
-# Convert all histogram binary files to dictionary of histogram type given the directory paths i.e. /files/Test/airplanes/01_histogram.npy
-# Make take time to load files
-def read_all_histograms(histograms_file_paths):
+
+def load_all_histograms(histograms_file_paths):
     histogram_values = collections.defaultdict(list)
 
     for path_key in histograms_file_paths:
@@ -67,15 +66,14 @@ def read_all_histograms(histograms_file_paths):
 
     return histogram_values
 
-# Reads histogram binary files by given dictionary of paths and a filter key, where key=(class_type, directory)
-def read_single_histograms(histogram_file_paths, filter_key=None):
+def load_single_histogram(histogram_file_paths, filter_key=None):
     histogram_values = collections.defaultdict(list)
 
     for file in histogram_file_paths[filter_key]:
         load_histograms_values = np.load(f'{filter_key[1]}/{file}', allow_pickle=True)
         histogram_values[filter_key].append(load_histograms_values.tolist())
 
-    return histogram_values if filter_key else read_all_histograms(histogram_file_paths)
+    return histogram_values if filter_key else load_all_histograms(histogram_file_paths)
 
 def load_images_in_directory(path) -> Dict[str, List]:
     images = {}
