@@ -36,10 +36,10 @@ def get_image_paths(image_format: str, path=TEST_PATH):
     image_paths = collections.defaultdict(list)
 
     for class_name in CLASSES:
-        directory = f'{path}/{class_name}/'
+        directory = f'{path}/{class_name}'
         for file in os.listdir(directory):
             if fnmatch.fnmatch(file, f'*.{image_format}'):
-                image_paths[class_name].append(f'{directory}{file}')
+                image_paths[(class_name, directory)].append(file)
     return image_paths
 
 def get_histogram_paths():

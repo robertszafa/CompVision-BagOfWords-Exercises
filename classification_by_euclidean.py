@@ -19,16 +19,17 @@ def display_image_with_label(label, image_path):
 def display_multiple_image_with_labels(class_type, images_and_labels):
     rows = 2 
     cols = len(images_and_labels) // 2
-
     figure, ax = plt.subplots(nrows=rows, ncols=cols)
+    
     for i, obj in enumerate(images_and_labels):
-        img = mpimg.imread(obj[1])
+        img = mpimg.imread(f'{class_type[1]}/{obj[1]}')
+        label = f'{obj[0]} \n {obj[1]}'
         ax.ravel()[i].imshow(img)
-        ax.ravel()[i].set_title(obj[0])
+        ax.ravel()[i].set_title(label)
         ax.ravel()[i].set_axis_off()
+
     plt.tight_layout()
     plt.show()
-
 
 ################################################################################
 # Step 4. Classification
@@ -85,12 +86,14 @@ def label_all_test_images(limit=None):
         amount = 0
         for hist in all_test_hist[class_type]:
             label = label_classification(hist, all_training_hist, limit)
-            images_and_labels[class_type].append((label[0], test_images_dir[class_type[0]][amount]))
+            print(class_type)
+            images_and_labels[class_type].append((label[0], test_images_dir[class_type][amount]))
             if label[0] == class_type[0]:
                 correct_label += 1
             amount += 1
         percentage_correct = int((correct_label / amount) * 100)
         print(f'{class_type[0]} correct label is {percentage_correct}%')
+        print(images_and_labels)
     
     return images_and_labels
 
@@ -98,7 +101,6 @@ def label_all_test_images(limit=None):
 if __name__ == "__main__":
     # Classification
     s = hp.get_image_paths("jpg")
-    t = s['airplanes'][0]
     result = label_all_test_images(50)
     for key in result:
-        display_multiple_image_with_labels(key, result[key])
+         display_multiple_image_with_labels(key, result[key])
