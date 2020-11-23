@@ -1,9 +1,6 @@
-from typing import Dict, List
+import random, time, re, os
 import cv2
 import numpy as np
-import time
-import re
-import os
 
 from helper import load_descriptors, save_to_pickle, DATASET_DIR, CLASSES, CODEBOOK_FILE_TRAIN, SMALL_CODEBOOK_FILE_TRAIN
 
@@ -23,8 +20,9 @@ def find_closest_neighbour_idx(neighbours, candidate):
     return closest_idx
 
 def gen_dictionary(feature_descriptors, num_words=500):
-    codebook = []
+    start_time = time.time()
 
+    codebook = []
     # Initialise. Randomly choose num_words features as cluster centres.
     random_idxs = np.random.choice(len(feature_descriptors), num_words)
     for i in random_idxs:
@@ -55,6 +53,8 @@ def gen_dictionary(feature_descriptors, num_words=500):
                 codebook[closest_cluster_idx] = new_center
                 no_change = False
 
+        print(f'Finished iteration {iteration} at minute {(time.time() - start_time)/60}.')
+
     return codebook
 
 ################################################################################
@@ -68,9 +68,11 @@ if __name__ == "__main__":
     training_descriptors = load_descriptors(test_or_train='Training', merge_in_class=True)
 
     # A single list for all feature descriptors from all classes.
+    # Pick the same number of descriptors from each class to prevent bias in the code book.
+    min_len_descriptors = min(map(len, training_descriptors.values()))
     all_descriptors = []
     for descriptors in training_descriptors.values():
-        all_descriptors += descriptors
+        all_descriptors += random.sample(descriptors, min_len_descriptors)
 
     # Generate one codebook for all classes.
     codebook = gen_dictionary(descriptors)

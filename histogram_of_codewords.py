@@ -41,6 +41,7 @@ def gen_histogram_of_codewords(img_descriptors, codebook):
     # Initially, each image will have a count of 0 for each codeword.
     histogram_of_codewords = [0 for _ in range(len(codebook))]
 
+    # Keep track of which descriptor idxs map to which code word.
     descriptor_to_codeword_map = [[] for _ in range(len(codebook))]
     map_descriptor = lambda word_idx, descriptor_idx : \
                       descriptor_to_codeword_map[word_idx].append(descriptor_idx)
@@ -70,33 +71,24 @@ def visualize_similar_patches(map_kps_to_codewords):
                 draw_keypoint(img_fname, int(kp[0][0]), int(kp[0][1]), int(kp[1]), title)
 
 ## Step 3.4
-def l1_norm(vec):
-    return np.sum([abs(val) for val in vec])
+def normalise_histogram(histogram):
+    """
+    Given a list {histogram}, where each element {i} represents the frequency of the bin {i},
+    return a normalised_histogram where each element {i} is equal to
+    (frequency in bin {i}) / (total number of elements in all bins, i.e. L1 norm of the histogram)
+    """
+    total_sum = np.sum(histogram)
+    for i in range(len(histogram)):
+        histogram[i] /= total_sum
 
-def normalise_histogram(img_histogram_of_codewords, codebook, norm_func):
-    assert len(img_histogram_of_codewords) == len(codebook)
-
-    # Normalise the histogram using the passed in norm function.
-    # The norm value of the codeword becomes the key and the frequency of the codeword becomes the value.
-    normalised_histogram_of_codewords = {}
-    for word_idx in range(len(img_histogram_of_codewords)):
-        norm = norm_func(codebook[word_idx])
-
-        if norm in normalised_histogram_of_codewords:
-            # Two histograms could have the same norm. Unlikely, but if it does occur,
-            # then we'll take the combined frequencies.
-            normalised_histogram_of_codewords[norm] += img_histogram_of_codewords[word_idx]
-        else:
-            normalised_histogram_of_codewords[norm] = img_histogram_of_codewords[word_idx]
-
-    return normalised_histogram_of_codewords
+    return histogram
 
 
 if __name__ == "__main__":
     start_time = time.time()
 
-    # codebook = load_pickled_list(CODEBOOK_FILE_TRAIN)
-    codebook = load_pickled_list(SMALL_CODEBOOK_FILE_TRAIN)
+    codebook = load_pickled_list(CODEBOOK_FILE_TRAIN)
+    # codebook = load_pickled_list(SMALL_CODEBOOK_FILE_TRAIN)
 
     training_descriptors = load_descriptors(test_or_train='Training', merge_in_class=False)
     test_descriptors = load_descriptors(test_or_train='Test', merge_in_class=False)
@@ -117,7 +109,7 @@ if __name__ == "__main__":
         for img_id, img_descriptors in descriptors_files.items():
             img_histogram, descriptor_to_codeword_map = gen_histogram_of_codewords(img_descriptors, codebook)
 
-            nor_img_histogram = normalise_histogram(img_histogram, codebook, l1_norm)
+            nor_img_histogram = normalise_histogram(img_histogram)
             training_histogram_of_codewords[img_class][img_id] = nor_img_histogram
 
             # Use the fact that there is a 1:1 mapping between descriptor and kypoint idxs.
@@ -135,7 +127,8 @@ if __name__ == "__main__":
                 map_kps_to_codewords[word_idx][img_fname] = filtered_keypoints
 
             # Save each image histogram to a seperate file
-            hist_fname = f'{DATASET_DIR}/Training/{img_class}/{img_id}_histogram_small.npy'
+            hist_fname = f'{DATASET_DIR}/Training/{img_class}/{img_id}_histogram.npy'
+            # hist_fname = f'{DATASET_DIR}/Training/{img_class}/{img_id}_histogram_small.npy'
             save_to_pickle(hist_fname, nor_img_histogram)
 
     # Same for Test images.
@@ -144,7 +137,7 @@ if __name__ == "__main__":
         for img_id, img_descriptors in images.items():
             img_histogram, descriptor_to_codeword_map = gen_histogram_of_codewords(img_descriptors, codebook)
 
-            nor_img_histogram = normalise_histogram(img_histogram, codebook, l1_norm)
+            nor_img_histogram = normalise_histogram(img_histogram)
             test_histogram_of_codewords[img_class][img_id] = nor_img_histogram
 
             # Use the fact that there is a 1:1 mapping between descriptor and kypoint idxs.
@@ -162,15 +155,16 @@ if __name__ == "__main__":
                 map_kps_to_codewords[word_idx][img_fname] = filtered_keypoints
 
             # Save each image histogram to a seperate file
-            hist_fname = f'{DATASET_DIR}/Test/{img_class}/{img_id}_histogram_small.npy'
+            hist_fname = f'{DATASET_DIR}/Test/{img_class}/{img_id}_histogram.npy'
+            # hist_fname = f'{DATASET_DIR}/Test/{img_class}/{img_id}_histogram_small.npy'
             save_to_pickle(hist_fname, nor_img_histogram)
 
 
     # map_kps_to_codewords = load_pickled_list(MAP_KPS_TO_CODEWORD_FILE)
-    # save_to_pickle(MAP_KPS_TO_CODEWORD_FILE, map_kps_to_codewords)
+    save_to_pickle(MAP_KPS_TO_CODEWORD_FILE, map_kps_to_codewords)
 
     # map_kps_to_codewords = load_pickled_list(MAP_KPS_TO_SMALL_CODEWORD_FILE)
-    save_to_pickle(MAP_KPS_TO_SMALL_CODEWORD_FILE, map_kps_to_codewords)
+    # save_to_pickle(MAP_KPS_TO_SMALL_CODEWORD_FILE, map_kps_to_codewords)
 
     # Put most matched codewords and the corresponding keypoints to the front.
     # Note that we don't care towhich specific codeword given keypoints match, we just care about
