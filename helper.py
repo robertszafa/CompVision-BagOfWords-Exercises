@@ -22,8 +22,8 @@ TEST_PATH = f'{DATASET_DIR}/Test'
 
 CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
 SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small.npy'
-UNLIMITED_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
-UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small.npy'
+UNLIMITED_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_all.npy'
+UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small_all.npy'
 
 MAP_KPS_TO_CODEWORD_FILE = f'{DATASET_DIR}/map_kps_to_codewords.npy'
 MAP_KPS_TO_SMALL_CODEWORD_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small.npy'

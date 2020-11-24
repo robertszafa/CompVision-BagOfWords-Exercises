@@ -71,7 +71,7 @@ def gen_codebook(feature_descriptors, fname, num_words=500):
             new_centers = pool.map(mean, cluster_vectors_map)
 
         # Stop if there are no more improvements to be made.
-        do_next_iter = not np.all(codebook == new_centers)
+        do_next_iter = not np.all(np.array(codebook) == np.array(new_centers))
 
         # Assign new centers.
         for i in range(len(codebook)):

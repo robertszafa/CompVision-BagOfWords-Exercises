@@ -4,24 +4,13 @@ import time
 import sys
 import re
 
-from helper import load_descriptors, load_keypoints, load_pickled_list, save_to_pickle
+from helper import load_descriptors, load_keypoints, load_pickled_list, save_to_pickle, euclidean_distance
 from helper import DATASET_DIR, CLASSES, CODEBOOK_FILE_TRAIN, SMALL_CODEBOOK_FILE_TRAIN, MAP_KPS_TO_CODEWORD_FILE, MAP_KPS_TO_SMALL_CODEWORD_FILE
 
 ###########################################################################
 # Step 3. Image representation with a histogram of codewords
 ################################################################################
 ## Step 3.1
-def euclidean_distance(vec1, vec2):
-    diff = vec1 - vec2
-
-    dist = 0
-    for p in diff:
-        # Euclidean distance in a 2D plane is: np.sqrt(p.x ** 2 + p.y**2). Our p id 1D,
-        # so we can just take the absolute value.
-        dist += abs(p)
-
-    return dist
-
 def find_nearest_cluster_idx(descriptor, clusters):
     min_idx = 0
     min_dist = euclidean_distance(descriptor, clusters[min_idx])
