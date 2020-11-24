@@ -5,11 +5,19 @@ import numpy as np
 from helper import load_descriptors, save_to_pickle, euclidean_distance, mean
 from helper import DATASET_DIR, CLASSES, CODEBOOK_FILE_TRAIN, SMALL_CODEBOOK_FILE_TRAIN, UNLIMITED_CODEBOOK_FILE_TRAIN, UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN
 
+# Speed up k-NN
+import multiprocessing as mp
+
 
 ################################################################################
 # Step 2. Dictionary generation
 ################################################################################
-def find_closest_neighbour_idx(neighbours, candidate):
+def find_closest_neighbour_idx(neighbours_candidate_pair):
+    """
+    Given a tuple of (neighbours, candidate), return the index of the 1-kNN of candidate in neighbours.
+    """
+    neighbours, candidate = neighbours_candidate_pair
+
     closest_idx = 0
     curr_dist = euclidean_distance(candidate, neighbours[closest_idx])
 
@@ -31,7 +39,7 @@ def gen_codebook(feature_descriptors, fname, num_words=500):
     for i in random_idxs:
         codebook.append(feature_descriptors[i])
 
-    # Get rid of the selected centers.
+    # Get rid of the selected descriptors.
     feature_descriptors = [feature_descriptors[i] for i in range(len(feature_descriptors)) if i not in random_idxs]
 
     # Do, while there were any changes in any cluster.
@@ -42,18 +50,32 @@ def gen_codebook(feature_descriptors, fname, num_words=500):
         iteration += 1
         do_next_iter = False
 
-        new_centers = [[word] for word in codebook]
-        for i, descriptor in enumerate(feature_descriptors):
-            closest_cluster_idx = find_closest_neighbour_idx(codebook, descriptor)
+        # Find the indexes of the nearest cluster for each descriptor.
+        # This step is easily parallelizable.
+        with mp.Pool(mp.cpu_count()) as pool:
+            # pool.map takes one argument, so we have to zip codebook and descriptor together.
+            # Note that we need unique copies of the codebook since each process might execute
+            # on different CPUs.
+            neighbours_candidate_pair = [(codebook, descriptor) for descriptor in descriptors]
+            closest_cluster_idxs = pool.map(find_closest_neighbour_idx, neighbours_candidate_pair)
 
-            new_centers[closest_cluster_idx].append(descriptor)
+        # Collect all the descrtiptors mapped to the same keyword from the calculated indexes.
+        # pool.map results are ordered,
+        # i.e. the output closest_cluster_idxs[i] corresponds to the descriptor[i]
+        cluster_vectors_map = [[word] for word in codebook]
+        for i in closest_cluster_idxs:
+            cluster_vectors_map[closest_cluster_idxs[i]].append(descriptors[i])
 
-        # Stop when there are no improvements.
-        for assigned_descriptors in new_centers:
-            new_codeword = mean(assigned_descriptors)
-            if new_codeword != codebook[i]:
-                codebook[i] = new_codeword
-                do_next_iter = True
+        # Calculate new cluster centers. This is also easily parallelizable.
+        with mp.Pool(mp.cpu_count()) as pool:
+            new_centers = pool.map(mean, cluster_vectors_map)
+
+        # Stop if there are no more improvements to be made.
+        do_next_iter = not np.all(codebook == new_centers)
+
+        # Assign new centers.
+        for i in range(len(codebook)):
+            codebook[i] = new_centers[i]
 
         print(f'Finished iteration {iteration} at minute {(time.time() - start_time)/60}.')
         save_to_pickle(fname, codebook)
