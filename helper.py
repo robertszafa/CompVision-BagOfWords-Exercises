@@ -19,10 +19,15 @@ CLASSES = [
 ]
 TRAINING_PATH  = f'{DATASET_DIR}/Training'
 TEST_PATH = f'{DATASET_DIR}/Test'
+
 CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
 SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small.npy'
+UNLIMITED_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
+UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small.npy'
+
 MAP_KPS_TO_CODEWORD_FILE = f'{DATASET_DIR}/map_kps_to_codewords.npy'
 MAP_KPS_TO_SMALL_CODEWORD_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small.npy'
+
 SMALL_HISTOGRAM_BINARY_FORMAT = "*histogram_small.npy"
 LARGE_HISTOGRAM_BINARY_FORMAT = "*histogram.npy"
 
