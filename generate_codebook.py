@@ -2,7 +2,8 @@ import random, time, re, os
 import cv2
 import numpy as np
 
-from helper import load_descriptors, save_to_pickle, DATASET_DIR, CLASSES, CODEBOOK_FILE_TRAIN, SMALL_CODEBOOK_FILE_TRAIN
+from helper import load_descriptors, save_to_pickle, euclidean_distance
+from helper import DATASET_DIR, CLASSES, CODEBOOK_FILE_TRAIN, SMALL_CODEBOOK_FILE_TRAIN
 
 
 ################################################################################
@@ -10,36 +11,34 @@ from helper import load_descriptors, save_to_pickle, DATASET_DIR, CLASSES, CODEB
 ################################################################################
 def find_closest_neighbour_idx(neighbours, candidate):
     closest_idx = 0
-    curr_dist = np.sum(abs(neighbours[closest_idx] - candidate))
+    curr_dist = euclidean_distance(candidate, neighbours[closest_idx])
 
     for i in range(len(neighbours)):
-        if np.sum(abs(neighbours[i] - candidate)) < curr_dist:
+        this_dist = euclidean_distance(candidate, neighbours[i])
+
+        if this_dist < curr_dist:
             closest_idx = i
-            curr_dist = np.sum(abs(neighbours[closest_idx] - candidate))
+            curr_dist = this_dist
 
     return closest_idx
 
 def gen_dictionary(feature_descriptors, num_words=500):
     start_time = time.time()
 
+    # Initialise. Randomly choose num_words feature descriptors as cluster centres.
     codebook = []
-    # Initialise. Randomly choose num_words features as cluster centres.
     random_idxs = np.random.choice(len(feature_descriptors), num_words)
     for i in random_idxs:
-        # :TODO: Remove from the list here?
-        # descriptor = feature_descriptors.pop(i)
         descriptor = feature_descriptors[i]
         codebook.append(descriptor)
 
     # Do, while there were any changes in any cluster.
-    # Use the L1 norm to check for closeness.
-    # l1_norm = lambda v : np.sum(abs(v))
-    no_change = False
+    do_next_iter = True
     max_iter = 100
     iteration = 0
-    while not no_change and iteration < max_iter:
+    while do_next_iter and iteration < max_iter:
         iteration += 1
-        no_change = True
+        do_next_iter = False
 
         for descriptor in feature_descriptors:
             closest_cluster_idx = find_closest_neighbour_idx(codebook, descriptor)
@@ -49,9 +48,9 @@ def gen_dictionary(feature_descriptors, num_words=500):
 
             # Stop when the improvements become negligable.
             delta_for_change = 10
-            if np.any(abs(codebook[closest_cluster_idx] - new_center) > delta_for_change):
+            if do_next_iter or euclidean_distance(codebook[closest_cluster_idx], new_center) > delta_for_change:
                 codebook[closest_cluster_idx] = new_center
-                no_change = False
+                do_next_iter = True
 
         print(f'Finished iteration {iteration} at minute {(time.time() - start_time)/60}.')
 

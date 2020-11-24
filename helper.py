@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import cv2
-import fnmatch, os, collections, re
+import fnmatch, os, collections, re, math
 from typing import List, Dict, Set
 
 ################################################################################
@@ -26,6 +26,19 @@ MAP_KPS_TO_SMALL_CODEWORD_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small.npy'
 SMALL_HISTOGRAM_BINARY_FORMAT = "*histogram_small.npy"
 LARGE_HISTOGRAM_BINARY_FORMAT = "*histogram.npy"
 
+
+################################################################################
+# Common math functions
+################################################################################
+
+def euclidean_distance(vec1, vec2):
+    assert len(vec1) == len(vec2), 'vec1 and vec2 not same length.'
+
+    total = 0
+    for i in range(len(vec1)):
+        total += pow(vec1[i] - vec2[i], 2)
+
+    return math.sqrt(total)
 
 ################################################################################
 # Get directory or file paths
@@ -67,7 +80,7 @@ def get_histogram_paths(normal=False):
     return test_histogram_paths, training_histogram_paths
 
 ################################################################################
-# Read binary files
+# Read/write binary files
 ################################################################################
 
 def load_pickled_list(fname) -> List:
@@ -203,7 +216,7 @@ def display_image_with_label(label, image_path):
     plt.show()
 
 def display_multiple_image_with_labels(class_type, images_and_labels):
-    rows = 2 
+    rows = 2
     cols = len(images_and_labels) // 2
     figure, ax = plt.subplots(nrows=rows, ncols=cols)
 
