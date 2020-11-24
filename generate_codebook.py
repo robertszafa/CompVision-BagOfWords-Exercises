@@ -2,7 +2,7 @@ import random, time, re, os
 import cv2
 import numpy as np
 
-from helper import load_descriptors, save_to_pickle, euclidean_distance
+from helper import load_descriptors, save_to_pickle, euclidean_distance, mean
 from helper import DATASET_DIR, CLASSES, CODEBOOK_FILE_TRAIN, SMALL_CODEBOOK_FILE_TRAIN, UNLIMITED_CODEBOOK_FILE_TRAIN, UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN
 
 
@@ -22,7 +22,7 @@ def find_closest_neighbour_idx(neighbours, candidate):
 
     return closest_idx
 
-def gen_dictionary(feature_descriptors, fname, num_words=500):
+def gen_codebook(feature_descriptors, fname, num_words=500):
     start_time = time.time()
 
     # Initialise. Randomly choose num_words feature descriptors as cluster centres.
@@ -30,6 +30,9 @@ def gen_dictionary(feature_descriptors, fname, num_words=500):
     random_idxs = np.random.choice(len(feature_descriptors), num_words)
     for i in random_idxs:
         codebook.append(feature_descriptors[i])
+
+    # Get rid of the selected centers.
+    feature_descriptors = [feature_descriptors[i] for i in range(len(feature_descriptors)) if i not in random_idxs]
 
     # Do, while there were any changes in any cluster.
     do_next_iter = True
@@ -39,16 +42,17 @@ def gen_dictionary(feature_descriptors, fname, num_words=500):
         iteration += 1
         do_next_iter = False
 
-        for descriptor in feature_descriptors:
+        new_centers = [[word] for word in codebook]
+        for i, descriptor in enumerate(feature_descriptors):
             closest_cluster_idx = find_closest_neighbour_idx(codebook, descriptor)
 
-            # Update cluster center and increase count.
-            new_center = (codebook[closest_cluster_idx] + descriptor) / 2.0
+            new_centers[closest_cluster_idx].append(descriptor)
 
-            # Stop when the improvements become negligable.
-            delta_for_change = 10
-            if do_next_iter or euclidean_distance(codebook[closest_cluster_idx], new_center) > delta_for_change:
-                codebook[closest_cluster_idx] = new_center
+        # Stop when there are no improvements.
+        for assigned_descriptors in new_centers:
+            new_codeword = mean(assigned_descriptors)
+            if new_codeword != codebook[i]:
+                codebook[i] = new_codeword
                 do_next_iter = True
 
         print(f'Finished iteration {iteration} at minute {(time.time() - start_time)/60}.')
@@ -75,10 +79,10 @@ if __name__ == "__main__":
         capped_descriptors += random.sample(descriptors, min_len_descriptors)
         all_descriptors += descriptors
 
-    gen_dictionary(capped_descriptors, fname=CODEBOOK_FILE_TRAIN, num_words=500)
-    gen_dictionary(capped_descriptors, fname=SMALL_CODEBOOK_FILE_TRAIN, num_words=20)
+    gen_codebook(capped_descriptors, fname=CODEBOOK_FILE_TRAIN, num_words=500)
+    gen_codebook(capped_descriptors, fname=SMALL_CODEBOOK_FILE_TRAIN, num_words=20)
 
-    gen_dictionary(all_descriptors, fname=UNLIMITED_CODEBOOK_FILE_TRAIN, num_words=500)
-    gen_dictionary(all_descriptors, fname=UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN, num_words=20)
+    gen_codebook(all_descriptors, fname=UNLIMITED_CODEBOOK_FILE_TRAIN, num_words=500)
+    gen_codebook(all_descriptors, fname=UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN, num_words=20)
 
     print(f'Finished program in {(time.time() - start_time)/60} minutes.')

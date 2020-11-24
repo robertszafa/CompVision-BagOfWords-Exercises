@@ -45,6 +45,12 @@ def euclidean_distance(vec1, vec2):
 
     return math.sqrt(total)
 
+def mean(vectors):
+    """
+    Given a list of vectors, return the average vector.
+    """
+    return np.sum(vectors, 0) / len(vectors)
+
 ################################################################################
 # Get directory or file paths
 ################################################################################
