@@ -20,13 +20,21 @@ CLASSES = [
 TRAINING_PATH  = f'{DATASET_DIR}/Training'
 TEST_PATH = f'{DATASET_DIR}/Test'
 
+# Codebooks
 CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
 SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small.npy'
-UNLIMITED_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_all.npy'
-UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small_all.npy'
+UNLIMITED_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_unlimited.npy'
+UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small_unlimited.npy'
 
-MAP_KPS_TO_CODEWORD_FILE = f'{DATASET_DIR}/map_kps_to_codewords.npy'
-MAP_KPS_TO_SMALL_CODEWORD_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small.npy'
+SAD_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_sad.npy'
+SAD_SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small_sad.npy'
+SAD_UNLIMITED_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_unlimited_sad.npy'
+SAD_UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small_unlimited_sad.npy'
+
+MAP_KPS_TO_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords.npy'
+MAP_KPS_TO_SMALL_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small.npy'
+MAP_KPS_TO_SAD_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_sad.npy'
+MAP_KPS_TO_SMALL_SAD_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small_sad.npy'
 
 SMALL_HISTOGRAM_BINARY_FORMAT = "*histogram_small.npy"
 LARGE_HISTOGRAM_BINARY_FORMAT = "*histogram.npy"
@@ -37,13 +45,22 @@ LARGE_HISTOGRAM_BINARY_FORMAT = "*histogram.npy"
 ################################################################################
 
 def euclidean_distance(vec1, vec2):
-    assert len(vec1) == len(vec2), 'vec1 and vec2 not same length.'
+    # assert len(vec1) == len(vec2), 'vec1 and vec2 not same length.'
 
     total = 0
     for i in range(len(vec1)):
         total += pow(vec1[i] - vec2[i], 2)
 
     return math.sqrt(total)
+
+def sad(vec1, vec2):
+    # assert len(vec1) == len(vec2), 'vec1 and vec2 not same length.'
+
+    total = 0
+    for i in range(len(vec1)):
+        total += abs(vec1[i] - vec2[i])
+
+    return total
 
 def mean(vectors):
     """
