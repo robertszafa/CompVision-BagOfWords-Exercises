@@ -7,6 +7,8 @@ import re
 from helper import load_descriptors, load_keypoints, load_pickled_list, save_to_pickle, euclidean_distance
 from helper import DATASET_DIR, CLASSES, CODEBOOK_FILE_TRAIN, SMALL_CODEBOOK_FILE_TRAIN, MAP_KPS_TO_CODEWORD_FILE, MAP_KPS_TO_SMALL_CODEWORD_FILE
 
+import multiprocessing as mp
+
 ###########################################################################
 # Step 3. Image representation with a histogram of codewords
 ################################################################################
@@ -23,10 +25,11 @@ def find_nearest_cluster_idx(descriptor, clusters):
     return min_idx
 
 ## Step 3.2
-def gen_histogram_of_codewords(img_descriptors, codebook):
+def gen_histogram_of_codewords(img_descriptors_codebook_pair):
     """
     Generate a histogram of codewords for a single image, which is represented by a list of features.
     """
+    img_descriptors, codebook = img_descriptors_codebook_pair
     # Initially, each image will have a count of 0 for each codeword.
     histogram_of_codewords = [0 for _ in range(len(codebook))]
 
@@ -93,61 +96,49 @@ if __name__ == "__main__":
     training_keypoints = load_keypoints(test_or_train='Training', merge_in_class=False)
     test_keypoints = load_keypoints(test_or_train='Test', merge_in_class=False)
 
-    training_histogram_of_codewords = {c_name: dict() for c_name in CLASSES}
-    for img_class, descriptors_files in training_descriptors.items():
-        for img_id, img_descriptors in descriptors_files.items():
-            img_histogram, descriptor_to_codeword_map = gen_histogram_of_codewords(img_descriptors, codebook)
+    for train_or_test in ['Training', 'Test']:
+        descriptors_dict = training_descriptors if train_or_test == 'Training' else test_descriptors
+        keypoints_dict = training_keypoints if train_or_test == 'Training' else test_keypoints
 
-            nor_img_histogram = normalise_histogram(img_histogram)
-            training_histogram_of_codewords[img_class][img_id] = nor_img_histogram
+        for img_class, descriptors_files in descriptors_dict.items():
+            with mp.Pool(mp.cpu_count()) as pool:
+                # Pack input for map.
+                img_descriptors_codebook_pair = [(descriptors, codebook) for descriptors in descriptors_files.values()]
+                img_histograms_descriptor_to_codeword_map_pairs = pool.map(gen_histogram_of_codewords, img_descriptors_codebook_pair)
 
-            # Use the fact that there is a 1:1 mapping between descriptor and kypoint idxs.
-            # Use full img path, instead of id, for easier visualisation.
-            img_fname = f'{DATASET_DIR}/Training/{img_class}/{img_id}.jpg'
-            for word_idx, keypoint_idxs_list in enumerate(descriptor_to_codeword_map):
-                # Get rid of small keypoints.
-                filtered_keypoints = []
-                for kp_idx in keypoint_idxs_list:
-                    # We have saved the keypoint as [(kp_x, (kp_y), kp_diameter]
-                    kp = training_keypoints[img_class][img_id][kp_idx]
-                    if kp[1] > KEYPOINT_DIAMETER_THRESHOLD:
-                        filtered_keypoints.append(kp)
+                # Unpack output from map.
+                img_histograms, descriptor_to_codeword_maps = [], []
+                for hd in img_histograms_descriptor_to_codeword_map_pairs:
+                    img_histograms.append(hd[0])
+                    descriptor_to_codeword_maps.append(hd[1])
+
+                nor_img_histograms = pool.map(normalise_histogram, img_histograms)
+
+            # Save each image histogram to a seperate file
+            for i, img_id in enumerate(descriptors_files.keys()):
+                hist_fname = f'{DATASET_DIR}/{train_or_test}/{img_class}/{img_id}_histogram.npy'
+                # hist_fname = f'{DATASET_DIR}/{train_or_test}/{img_class}/{img_id}_histogram_small.npy'
+
+                # From Python 3.6 onwards, the standard dict type maintains insertion order by default,
+                # i.e. we can use i here to get the nor_histogram corresponding to the img_id
+                save_to_pickle(hist_fname, nor_img_histograms[i])
+
+            for descriptor_to_codeword_map in descriptor_to_codeword_maps:
+                # Use full img path, instead of id, for easier visualisation.
+                img_fname = f'{DATASET_DIR}/{train_or_test}/{img_class}/{img_id}.jpg'
+                for word_idx, keypoint_idxs_list in enumerate(descriptor_to_codeword_map):
+                    # Get rid of small keypoints.
+                    filtered_keypoints = []
+                    for kp_idx in keypoint_idxs_list:
+                        # We have saved the keypoint as [(kp_x, (kp_y), kp_diameter]
+                        # Use the fact that there is a 1:1 mapping between descriptor and kypoint idxs.
+                        kp = keypoints_dict[img_class][img_id][kp_idx]
+                        if kp[1] > KEYPOINT_DIAMETER_THRESHOLD:
+                            filtered_keypoints.append(kp)
 
                 map_kps_to_codewords[word_idx][img_fname] = filtered_keypoints
 
-            # Save each image histogram to a seperate file
-            hist_fname = f'{DATASET_DIR}/Training/{img_class}/{img_id}_histogram.npy'
-            # hist_fname = f'{DATASET_DIR}/Training/{img_class}/{img_id}_histogram_small.npy'
-            save_to_pickle(hist_fname, nor_img_histogram)
-
-    # Same for Test images.
-    test_histogram_of_codewords = {c_name: dict() for c_name in CLASSES}
-    for img_class, images in test_descriptors.items():
-        for img_id, img_descriptors in images.items():
-            img_histogram, descriptor_to_codeword_map = gen_histogram_of_codewords(img_descriptors, codebook)
-
-            nor_img_histogram = normalise_histogram(img_histogram)
-            test_histogram_of_codewords[img_class][img_id] = nor_img_histogram
-
-            # Use the fact that there is a 1:1 mapping between descriptor and kypoint idxs.
-            # Use full img path, instead of id, for easier visualisation.
-            img_fname = f'{DATASET_DIR}/Test/{img_class}/{img_id}.jpg'
-            for word_idx, keypoint_idxs_list in enumerate(descriptor_to_codeword_map):
-                # Get rid of small keypoints.
-                filtered_keypoints = []
-                for kp_idx in keypoint_idxs_list:
-                    # We have saved the keypoint as [(kp_x, (kp_y), kp_diameter]
-                    kp = test_keypoints[img_class][img_id][kp_idx]
-                    if kp[1] > KEYPOINT_DIAMETER_THRESHOLD:
-                        filtered_keypoints.append(kp)
-
-                map_kps_to_codewords[word_idx][img_fname] = filtered_keypoints
-
-            # Save each image histogram to a seperate file
-            hist_fname = f'{DATASET_DIR}/Test/{img_class}/{img_id}_histogram.npy'
-            # hist_fname = f'{DATASET_DIR}/Test/{img_class}/{img_id}_histogram_small.npy'
-            save_to_pickle(hist_fname, nor_img_histogram)
-
+            print(f'Finished {train_or_test}/{img_class} in {(time.time() - start_time)/60} minutes.')
 
     # map_kps_to_codewords = load_pickled_list(MAP_KPS_TO_CODEWORD_FILE)
     save_to_pickle(MAP_KPS_TO_CODEWORD_FILE, map_kps_to_codewords)
