@@ -39,9 +39,6 @@ def gen_codebook(feature_descriptors, fname, num_words=500):
     for i in random_idxs:
         codebook.append(feature_descriptors[i])
 
-    # Get rid of the selected descriptors.
-    feature_descriptors = [feature_descriptors[i] for i in range(len(feature_descriptors)) if i not in random_idxs]
-
     # Do, while there were any changes in any cluster.
     do_next_iter = True
     max_iter = 10
