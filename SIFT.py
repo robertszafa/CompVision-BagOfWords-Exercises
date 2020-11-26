@@ -12,6 +12,10 @@ from functools import cmp_to_key
 
 from helper import load_images_in_directory, DATASET_DIR, CLASSES
 
+import multiprocessing as mp
+from pysift import computeKeypointsAndDescriptors
+from silx.opencl import sift
+
 
 def convolution(img, kernel, average=False):
     """
@@ -607,12 +611,19 @@ if __name__ == "__main__":
         for class_name in CLASSES:
             class_imgs = load_images_in_directory(f'{DATASET_DIR}/{training_or_test}/{class_name}')
             for fname, img in class_imgs.items():
-                descriptors, keypoints = extract_SIFT_features(img)
-                keypoints = [[k.pt, k.size] for k in keypoints]
+                # descriptors, keypoints = extract_SIFT_features(img)
+                sift_ocl = sift.SiftPlan(template=img, devicetype="GPU")
+
+                outputs = sift_ocl.keypoints(img)
+
+                keypoints = [[(out.x, out.y), out.scale] for out in outputs]
+                descriptors = []
+                for d in outputs.desc:
+                    descriptors.append([float(e) for e in d])
 
                 fname = fname.split('.')[0]
-                d_file = f'{DATASET_DIR}/{training_or_test.lower()}_descriptors/{class_name}/{fname}_descriptors.npy'
-                k_file = f'{DATASET_DIR}/{training_or_test.lower()}_descriptors/{class_name}/{fname}_keypoints.npy'
+                d_file = f'{DATASET_DIR}/{training_or_test.lower()}/{class_name}/{fname}_descriptors_gpu.npy'
+                k_file = f'{DATASET_DIR}/{training_or_test.lower()}/{class_name}/{fname}_keypoints_gpu.npy'
                 with open(d_file, 'wb') as f:
                     np.save(f, descriptors)
                 with open(k_file, 'wb') as f:

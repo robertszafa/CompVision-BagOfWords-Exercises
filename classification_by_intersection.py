@@ -1,6 +1,6 @@
 from typing import Dict, List
 import helper as hp
-import collections 
+import collections
 
 ################################################################################
 # Step 6. Intersection between two histograms
@@ -37,7 +37,7 @@ def label_histogram_by_intersection(test_hist, train_hist, limit=None):
 
 def label_all_test_images(limit=None):
     # Get the paths of all histogram files
-    test_path, training_path = hp.get_histogram_paths()
+    test_path, training_path = hp.get_histogram_paths(normal=True)
 
     # Load all histogram binary file name
     all_test_hist = hp.load_all_histograms(test_path)
@@ -63,7 +63,7 @@ def label_all_test_images(limit=None):
     return images_and_labels
 
 if __name__ == "__main__":
-    result = label_all_test_images(limit=50)
+    result = label_all_test_images()
     print(result)
     for key in result:
          hp.display_multiple_image_with_labels(key, result[key])

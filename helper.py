@@ -36,8 +36,13 @@ MAP_KPS_TO_SMALL_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small.npy'
 MAP_KPS_TO_SAD_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_sad.npy'
 MAP_KPS_TO_SMALL_SAD_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small_sad.npy'
 
+UNLIMITED_MAP_KPS_TO_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_unlimited.npy'
+UNLIMITED_MAP_KPS_TO_SMALL_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small_unlimited.npy'
+UNLIMITED_MAP_KPS_TO_SAD_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_sad_unlimited.npy'
+UNLIMITED_MAP_KPS_TO_SMALL_SAD_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small_sad_unlimited.npy'
+
 SMALL_HISTOGRAM_BINARY_FORMAT = "*histogram_small.npy"
-LARGE_HISTOGRAM_BINARY_FORMAT = "*histogram.npy"
+LARGE_HISTOGRAM_BINARY_FORMAT = "*histogram_gpu.npy"
 
 
 ################################################################################
@@ -67,6 +72,26 @@ def mean(vectors):
     Given a list of vectors, return the average vector.
     """
     return np.sum(vectors, 0) / len(vectors)
+
+def kNN(candidate: list, neighbours_by_class: dict, k=1, dist_func=euclidean_distance):
+    """
+    Return the class of the k-Nearest Neighbour.
+    """
+    results = []
+
+    for class_type, class_histograms in neighbours_by_class.items():
+        for train_hist in class_histograms:
+            dist = dist_func(candidate, train_hist)
+            results.append([class_type, dist])
+
+    # Sort [class_of_img_hist: distance] pairs based on distance
+    results.sort(key=lambda res : res[1])
+
+    class_count = {c: 0 for c in neighbours_by_class.keys()}
+    for i in range(k):
+        class_count[results[i][0]] += 1
+
+    return max(class_count, key=class_count.get)
 
 ################################################################################
 # Get directory or file paths
@@ -123,6 +148,7 @@ def load_all_histograms(histograms_file_paths):
 
     for path_key in histograms_file_paths:
         for file in histograms_file_paths[path_key]:
+            print(path_key)
             load_histograms_values = np.load(f'{path_key[1]}/{file}', allow_pickle=True)
             histogram_values[path_key].append(load_histograms_values.tolist())
 
@@ -181,7 +207,7 @@ def load_descriptors(test_or_train, merge_in_class=False):
     """
     descriptors = {}
     for class_name in CLASSES:
-        match_descriptors = r'.*_descriptors' + re.escape('.npy')
+        match_descriptors = r'.*_descriptors_gpu' + re.escape('.npy')
         load_from = f'{DATASET_DIR}/{test_or_train}/{class_name}/'
         descriptors_dict = load_np_pickles_in_directory(load_from, match_descriptors)
 
@@ -209,7 +235,7 @@ def load_keypoints(test_or_train, merge_in_class=False):
     """
     keypoints = {}
     for class_name in CLASSES:
-        match_keypoints = r'.*_keypoints' + re.escape('.npy')
+        match_keypoints = r'.*_keypoints_gpu' + re.escape('.npy')
         load_from = f'{DATASET_DIR}/{test_or_train}/{class_name}/'
         keypoints_dict = load_np_pickles_in_directory(load_from, match_keypoints)
 
@@ -226,6 +252,28 @@ def load_keypoints(test_or_train, merge_in_class=False):
             keypoints[class_name] = keypoints_dict
 
     return keypoints
+
+def load_histograms(test_or_train, merge_in_class=False):
+    """
+    Read the keypoints from the {test_or_train} dataset.
+    Return a dictionary with the class names as keys.
+    If {merge_in_class} is True, then a single class will have a list of all keypoints as the value.
+    Otherwise, it will have a list of dictionaries as values, where the dictionaries have
+    the individual img filename as key and their list of keypoints as values.
+    """
+    histograms = {}
+    for class_name in CLASSES:
+        match_keypoints = r'.*histogram_gpu' + re.escape('.npy')
+        load_from = f'{DATASET_DIR}/{test_or_train}/{class_name}/'
+        class_hists_dict = load_np_pickles_in_directory(load_from, match_keypoints)
+
+        if merge_in_class:
+            histograms[class_name] = list(class_hists_dict.values())
+        else:
+            histograms[class_name] = class_hists_dict
+
+    return histograms
+
 
 
 def save_to_pickle(pickle_fname, data):

@@ -4,6 +4,9 @@ import numpy as np
 import multiprocessing as mp
 
 import helper as hp
+from histogram_of_codewords import *
+
+import scipy.cluster.vq as vq
 
 ################################################################################
 # Step 2. Dictionary generation
@@ -59,6 +62,8 @@ def gen_codebook(feature_descriptors, fname, dist_func=hp.euclidean_distance, nu
 
         # Stop if there are no more improvements to be made.
         if np.all(np.array(codebook) == np.array(new_centers)):
+            # If somehow the randomly chosen centers are not changed after first iter.
+            hp.save_to_pickle(fname, codebook)
             break
 
         # Assign new centers.
@@ -89,16 +94,95 @@ if __name__ == "__main__":
         capped_descriptors += random.sample(descriptors, min_len_descriptors)
         all_descriptors += descriptors
 
-    gen_codebook(capped_descriptors, fname=hp.SAD_CODEBOOK_FILE_TRAIN, dist_func=hp.sad, num_words=500)
-    gen_codebook(capped_descriptors, fname=hp.SAD_SMALL_CODEBOOK_FILE_TRAIN, dist_func=hp.sad, num_words=20)
+    training_descriptors = hp.load_descriptors(test_or_train='Training', merge_in_class=False)
+    test_descriptors = hp.load_descriptors(test_or_train='Test', merge_in_class=False)
+    # Note that keypoint i of a given image corresponds to descriptor i of that image.
+    training_keypoints = hp.load_keypoints(test_or_train='Training', merge_in_class=False)
+    test_keypoints = hp.load_keypoints(test_or_train='Test', merge_in_class=False)
 
-    gen_codebook(capped_descriptors, fname=hp.CODEBOOK_FILE_TRAIN, dist_func=hp.euclidean_distance, num_words=500)
-    gen_codebook(capped_descriptors, fname=hp.SMALL_CODEBOOK_FILE_TRAIN, dist_func=hp.euclidean_distance, num_words=20)
+    codebook, _ = vq.kmeans(all_descriptors, 500)
+    hp.save_to_pickle(hp.CODEBOOK_FILE_TRAIN, codebook)
+    print(f'Finished codebook in {(time.time() - start_time)/60} minutes.')
+    map_kps_to_codebook = gen_histograms(training_descriptors, test_descriptors,
+                                                    training_keypoints, test_keypoints,
+                                                    codebook, hist_file_extension='_histogram.npy')
+    hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_FILE, map_kps_to_codebook)
+    print(f'Finished hist in {(time.time() - start_time)/60} minutes.')
 
-    gen_codebook(all_descriptors, fname=hp.SAD_UNLIMITED_CODEBOOK_FILE_TRAIN, dist_func=hp.sad, num_words=500)
-    gen_codebook(all_descriptors, fname=hp.SAD_UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN, dist_func=hp.sad, num_words=20)
+    codebook_small, _ = vq.kmeans(all_descriptors, 500)
+    print(f'Finished small codebook in {(time.time() - start_time)/60} minutes.')
+    hp.save_to_pickle(hp.SMALL_CODEBOOK_FILE_TRAIN, codebook_small)
+    map_kps_to_codebook_small = gen_histograms(training_descriptors, test_descriptors,
+                                                    training_keypoints, test_keypoints,
+                                                    codebook_small, hist_file_extension='_histogram_small.npy')
+    hp.save_to_pickle(hp.MAP_KPS_TO_SMALL_CODEBOOK_FILE, map_kps_to_codebook_small)
+    print(f'Finished small hist in {(time.time() - start_time)/60} minutes.')
 
-    gen_codebook(all_descriptors, fname=hp.UNLIMITED_CODEBOOK_FILE_TRAIN, dist_func=hp.euclidean_distance, num_words=500)
-    gen_codebook(all_descriptors, fname=hp.UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN, dist_func=hp.euclidean_distance, num_words=20)
 
-    print(f'Finished program in {(time.time() - start_time)/60} minutes.')
+#     map_kps_to_sad_codebook_unlimited = gen_histograms(training_descriptors, test_descriptors,
+#                                                training_keypoints, test_keypoints,
+#                                                sad_codebook_unlimited, hist_file_extension='_histogram_sad_unlimited.npy')
+#     hp.save_to_pickle(hp.UNLIMITED_MAP_KPS_TO_SAD_CODEBOOK_FILE, map_kps_to_sad_codebook_unlimited)
+
+#     # gen_codebook(capped_descriptors, fname=hp.SAD_CODEBOOK_FILE_TRAIN, dist_func=hp.sad, num_words=500)
+#     # gen_codebook(capped_descriptors, fname=hp.SAD_SMALL_CODEBOOK_FILE_TRAIN, dist_func=hp.sad, num_words=20)
+
+#     # gen_codebook(capped_descriptors, fname=hp.CODEBOOK_FILE_TRAIN, dist_func=hp.euclidean_distance, num_words=500)
+#     # gen_codebook(capped_descriptors, fname=hp.SMALL_CODEBOOK_FILE_TRAIN, dist_func=hp.euclidean_distance, num_words=20)
+
+#     #######################
+#     # gen_codebook(all_descriptors, fname=hp.SAD_UNLIMITED_CODEBOOK_FILE_TRAIN, dist_func=hp.sad, num_words=500)
+#     # gen_codebook(all_descriptors, fname=hp.SAD_UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN, dist_func=hp.sad, num_words=20)
+#     # #######################
+
+#     sad_codebook_unlimited = hp.load_pickled_list(hp.SAD_UNLIMITED_CODEBOOK_FILE_TRAIN)
+#     sad_codebook_small_unlimited = hp.load_pickled_list(hp.SAD_UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN)
+
+#     training_descriptors = hp.load_descriptors(test_or_train='Training', merge_in_class=False)
+#     test_descriptors = hp.load_descriptors(test_or_train='Test', merge_in_class=False)
+#     # Note that keypoint i of a given image corresponds to descriptor i of that image.
+#     training_keypoints = hp.load_keypoints(test_or_train='Training', merge_in_class=False)
+#     test_keypoints = hp.load_keypoints(test_or_train='Test', merge_in_class=False)
+
+#     map_kps_to_sad_codebook_unlimited = gen_histograms(training_descriptors, test_descriptors,
+#                                                training_keypoints, test_keypoints,
+#                                                sad_codebook_unlimited, hist_file_extension='_histogram_sad_unlimited.npy')
+#     hp.save_to_pickle(hp.UNLIMITED_MAP_KPS_TO_SAD_CODEBOOK_FILE, map_kps_to_sad_codebook_unlimited)
+
+#     map_kps_to_sad_codebook_small_unlimited = gen_histograms(training_descriptors, test_descriptors,
+#                                                training_keypoints, test_keypoints,
+#                                                sad_codebook_small_unlimited, hist_file_extension='_histogram_sad_unlimited_small.npy')
+#     hp.save_to_pickle(hp.UNLIMITED_MAP_KPS_TO_SMALL_SAD_CODEBOOK_FILE, map_kps_to_sad_codebook_small_unlimited)
+
+
+#     #######################
+#     gen_codebook(all_descriptors, fname=hp.UNLIMITED_CODEBOOK_FILE_TRAIN, dist_func=hp.euclidean_distance, num_words=500)
+#     gen_codebook(all_descriptors, fname=hp.UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN, dist_func=hp.euclidean_distance, num_words=20)
+#     #######################
+
+
+#     codebook_unlimited = hp.load_pickled_list(hp.UNLIMITED_CODEBOOK_FILE_TRAIN)
+#     codebook_small_unlimited = hp.load_pickled_list(hp.UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN)
+
+#     map_kps_to_sad_codebook_unlimited = gen_histograms(training_descriptors, test_descriptors,
+#                                                training_keypoints, test_keypoints,
+#                                                sad_codebook_unlimited, hist_file_extension='_histogram_sad_unlimited.npy')
+#     hp.save_to_pickle(hp.UNLIMITED_MAP_KPS_TO_SAD_CODEBOOK_FILE, map_kps_to_sad_codebook_unlimited)
+
+#     map_kps_to_sad_codebook_small_unlimited = gen_histograms(training_descriptors, test_descriptors,
+#                                                training_keypoints, test_keypoints,
+#                                                sad_codebook_small_unlimited, hist_file_extension='_histogram_sad_unlimited_small.npy')
+#     hp.save_to_pickle(hp.UNLIMITED_MAP_KPS_TO_SMALL_SAD_CODEBOOK_FILE, map_kps_to_sad_codebook_small_unlimited)
+
+
+
+#     gen_codebook(capped_descriptors, fname=hp.SAD_CODEBOOK_FILE_TRAIN, dist_func=hp.sad, num_words=500)
+#     gen_codebook(capped_descriptors, fname=hp.SAD_SMALL_CODEBOOK_FILE_TRAIN, dist_func=hp.sad, num_words=20)
+
+#     gen_codebook(capped_descriptors, fname=hp.CODEBOOK_FILE_TRAIN, dist_func=hp.euclidean_distance, num_words=500)
+#     gen_codebook(capped_descriptors, fname=hp.SMALL_CODEBOOK_FILE_TRAIN, dist_func=hp.euclidean_distance, num_words=20)
+
+
+
+#     print(f'Finished program in {(time.time() - start_time)/60} minutes.')
+# #
