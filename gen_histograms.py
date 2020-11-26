@@ -131,8 +131,8 @@ def gen_histograms(training_descriptors, test_descriptors, training_keypoints, t
 if __name__ == "__main__":
     start_time = time.time()
 
-    codebook = hp.load_pickled_list(hp.CODEBOOK_FILE)
-    codebook_small = hp.load_pickled_list(hp.CODEBOOK_SMALL_FILE)
+    # codebook = hp.load_pickled_list(hp.CODEBOOK_FILE)
+    # codebook_small = hp.load_pickled_list(hp.CODEBOOK_SMALL_FILE)
 
     codebook_euclidean = hp.load_pickled_list(hp.CODEBOOK_EUCLIDEAN_FILE)
     codebook_euclidean_small = hp.load_pickled_list(hp.CODEBOOK_EUCLIDEAN_SMALL_FILE)
@@ -144,31 +144,30 @@ if __name__ == "__main__":
     test_keypoints = hp.load_keypoints(test_or_train='Test', merge_in_class=False)
 
     # Generate histograms for the 500- and 20-word codebook where SAD was used as similarity function.
-    map_kps_to_codebook = gen_histograms(training_descriptors, test_descriptors,
-                                         training_keypoints, test_keypoints,
-                                         codebook,
-                                         hist_file_extension=hp.HISTOGRAM_FILE_EXT)
-    hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_FILE, map_kps_to_codebook)
+    # map_kps_to_codebook = gen_histograms(training_descriptors, test_descriptors,
+    #                                      training_keypoints, test_keypoints,
+    #                                      codebook,
+    #                                      hist_file_extension=hp.HISTOGRAM_FILE_EXT)
+    # hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_FILE, map_kps_to_codebook)
 
-    map_kps_to_codebook_small = gen_histograms(training_descriptors, test_descriptors,
-                                               training_keypoints, test_keypoints,
-                                               codebook_small,
-                                               hist_file_extension=hp.HISTOGRAM_SMALL_FILE_EXT)
-    hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_SMALL_FILE, map_kps_to_codebook)
+    # map_kps_to_codebook_small = gen_histograms(training_descriptors, test_descriptors,
+    #                                            training_keypoints, test_keypoints,
+    #                                            codebook_small,
+    #                                            hist_file_extension=hp.HISTOGRAM_SMALL_FILE_EXT)
+    # hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_SMALL_FILE, map_kps_to_codebook)
 
-    # Generate histograms for the 500- and 20-word codebook where euclidean distance was used as similarity function.
-    map_kps_to_codebook_euclidean = gen_histograms(training_descriptors, test_descriptors,
-                                               training_keypoints, test_keypoints,
-                                               codebook_euclidean,
-                                               hist_file_extension=hp.HISTOGRAM_EUCLIDEAN_FILE_EXT)
-    hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_EUCLIDEAN_FILE, map_kps_to_codebook)
-
+    # # Generate histograms for the 500- and 20-word codebook where euclidean distance was used as similarity function.
     map_kps_to_codebook_euclidean_small = gen_histograms(training_descriptors, test_descriptors,
                                                          training_keypoints, test_keypoints,
                                                          codebook_euclidean_small,
                                                          hist_file_extension=hp.HISTOGRAM_EUCLIDEAN_SMALL_FILE_EXT)
-    hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_EUCLIDEAN_SMALL_FILE, map_kps_to_codebook)
+    hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_EUCLIDEAN_SMALL_FILE, map_kps_to_codebook_euclidean_small)
 
+    map_kps_to_codebook_euclidean = gen_histograms(training_descriptors, test_descriptors,
+                                               training_keypoints, test_keypoints,
+                                               codebook_euclidean,
+                                               hist_file_extension=hp.HISTOGRAM_EUCLIDEAN_FILE_EXT)
+    hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_EUCLIDEAN_FILE, map_kps_to_codebook_euclidean)
 
     ###########################################################################
     # Step 3.3 Visualize some image patches that are assigned to the same codeword.
