@@ -87,6 +87,9 @@ def kNN(candidate: list, neighbours_by_class: dict, k=1, dist_func=euclidean_dis
 
     return max(class_count, key=class_count.get)
 
+def get_idx_of_1_NN(candidate, neighbours, dist_func=euclidean_distance):
+    pass
+
 ################################################################################
 # Get directory or file paths
 ################################################################################
