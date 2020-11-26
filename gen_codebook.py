@@ -22,17 +22,7 @@ def find_closest_neighbour_idx(neighbours_candidate_dist_func):
     """
     neighbours, candidate, dist_func = neighbours_candidate_dist_func
 
-    closest_idx = 0
-    curr_dist = dist_func(candidate, neighbours[closest_idx])
-
-    for i in range(len(neighbours)):
-        this_dist = dist_func(candidate, neighbours[i])
-
-        if this_dist < curr_dist:
-            closest_idx = i
-            curr_dist = this_dist
-
-    return closest_idx
+    return hp.get_idx_of_1_NN(candidate, neighbours, dist_func=dist_func)
 
 def gen_codebook(feature_descriptors, fname, dist_func=hp.sad, num_words=500, max_iter=10):
     """

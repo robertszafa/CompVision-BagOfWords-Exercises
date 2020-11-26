@@ -17,20 +17,6 @@ import multiprocessing as mp
 ###########################################################################
 # Step 3. Image representation with a histogram of codewords
 ################################################################################
-## Step 3.1
-def find_nearest_cluster_idx(descriptor, clusters):
-    min_idx = 0
-    min_dist = hp.euclidean_distance(descriptor, clusters[min_idx])
-
-    for i in range(1, len(clusters)):
-        this_dist = hp.euclidean_distance(descriptor, clusters[i])
-
-        if this_dist < min_dist:
-            min_dist = this_dist
-            min_idx = i
-
-    return min_idx
-
 ## Step 3.2
 def gen_single_img_histogram(img_descriptors_codebook_pair):
     """
@@ -47,7 +33,8 @@ def gen_single_img_histogram(img_descriptors_codebook_pair):
                       descriptor_to_codeword_map[word_idx].append(descriptor_idx)
 
     for idx, descriptor in enumerate(img_descriptors):
-        closest_cluster_idx = find_nearest_cluster_idx(descriptor, codebook)
+        # Step 3.1
+        closest_cluster_idx = hp.get_idx_of_1_NN(descriptor, codebook, dist_func=hp.euclidean_distance)
         histogram_of_codewords[closest_cluster_idx] += 1
 
         map_descriptor(closest_cluster_idx, idx)
