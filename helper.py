@@ -157,7 +157,6 @@ def load_all_histograms(histograms_file_paths):
 
     for path_key in histograms_file_paths:
         for file in histograms_file_paths[path_key]:
-            print(path_key)
             load_histograms_values = np.load(f'{path_key[1]}/{file}', allow_pickle=True)
             histogram_values[path_key].append(load_histograms_values.tolist())
 
