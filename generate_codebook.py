@@ -102,9 +102,9 @@ if __name__ == "__main__":
     codebook = gen_codebook(all_descriptors, hp.CODEBOOK_FILE, dist_func=hp.sad, num_words=500)
     codebook_small = gen_codebook(all_descriptors, hp.CODEBOOK_SMALL_FILE, dist_func=hp.sad, num_words=20)
 
-    codebook_euclidean = gen_codebook(all_descriptors, hp.CODEBOOK_FILE_EUCLIDEAN,
+    codebook_euclidean = gen_codebook(all_descriptors, hp.CODEBOOK_EUCLIDEAN_FILE,
                                       dist_func=hp.euclidean_distance, num_words=500)
-    codebook_small_euclidean = gen_codebook(all_descriptors, hp.CODEBOOK_SMALL_FILE_EUCLIDEAN,
+    codebook_small_euclidean = gen_codebook(all_descriptors, hp.CODEBOOK_EUCLIDEAN_SMALL_FILE,
                                             dist_func=hp.euclidean_distance, num_words=20)
 
     print(f'Finished program in {(time.time() - start_time)/60} minutes.')

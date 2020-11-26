@@ -30,17 +30,17 @@ TEST_PATH = f'{DATASET_DIR}/Test'
 CODEBOOK_FILE = f'{DATASET_DIR}/Training/codebook.npy'
 CODEBOOK_SMALL_FILE = f'{DATASET_DIR}/Training/codebook_small.npy'
 
-CODEBOOK_FILE_EUCLIDEAN = f'{DATASET_DIR}/Training/codebook_euclidean.npy'
-CODEBOOK_SMALL_FILE_EUCLIDEAN = f'{DATASET_DIR}/Training/codebook_euclidean_small.npy'
+CODEBOOK_EUCLIDEAN_FILE = f'{DATASET_DIR}/Training/codebook_euclidean.npy'
+CODEBOOK_EUCLIDEAN_SMALL_FILE = f'{DATASET_DIR}/Training/codebook_euclidean_small.npy'
 
 MAP_KPS_TO_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codebook.npy'
-MAP_KPS_TO_SMALL_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_small_codebook.npy'
+MAP_KPS_TO_CODEBOOK_SMALL_FILE = f'{DATASET_DIR}/map_kps_to_codebook_small.npy'
 
 HISTOGRAM_FILE_EXT = "_histogram.npy"
-SMALL_HISTOGRAM_FILE_EXT = "_histogram_small.npy"
+HISTOGRAM_SMALL_FILE_EXT = "_histogram_small.npy"
 
-EUCLIDEAN_HISTOGRAM_FILE_EXT = "_histogram_euclidean.npy"
-SMALL_EUCLIDEAN_HISTOGRAM_FILE_EXT = "_histogram_small_euclidean.npy"
+HISTOGRAM_EUCLIDEAN_FILE_EXT = "_histogram_euclidean.npy"
+HISTOGRAM_EUCLIDEAN_SMALL_FILE_EXT = "_histogram_euclidean_small.npy"
 
 
 ################################################################################
