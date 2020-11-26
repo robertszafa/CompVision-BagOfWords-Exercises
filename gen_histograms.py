@@ -161,11 +161,13 @@ if __name__ == "__main__":
                                                training_keypoints, test_keypoints,
                                                codebook_euclidean,
                                                hist_file_extension=hp.HISTOGRAM_EUCLIDEAN_FILE_EXT)
+    hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_EUCLIDEAN_FILE, map_kps_to_codebook)
 
     map_kps_to_codebook_euclidean_small = gen_histograms(training_descriptors, test_descriptors,
                                                          training_keypoints, test_keypoints,
                                                          codebook_euclidean_small,
                                                          hist_file_extension=hp.HISTOGRAM_EUCLIDEAN_SMALL_FILE_EXT)
+    hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_EUCLIDEAN_SMALL_FILE, map_kps_to_codebook)
 
 
     ###########################################################################
