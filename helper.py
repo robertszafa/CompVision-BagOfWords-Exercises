@@ -1,3 +1,10 @@
+"""
+Commonly used constants and methods for CW1-COMP338.
+
+Thepnathi Chindalaksanaloet, 201123978
+Robert Szafarczyk, 201307211
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
