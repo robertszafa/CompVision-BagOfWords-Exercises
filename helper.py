@@ -20,29 +20,20 @@ CLASSES = [
 TRAINING_PATH  = f'{DATASET_DIR}/Training'
 TEST_PATH = f'{DATASET_DIR}/Test'
 
-# Codebooks
-CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook.npy'
-SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small.npy'
-UNLIMITED_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_unlimited.npy'
-UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small_unlimited.npy'
+CODEBOOK_FILE = f'{DATASET_DIR}/Training/codebook.npy'
+CODEBOOK_SMALL_FILE = f'{DATASET_DIR}/Training/codebook_small.npy'
 
-SAD_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_sad.npy'
-SAD_SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small_sad.npy'
-SAD_UNLIMITED_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_unlimited_sad.npy'
-SAD_UNLIMITED_SMALL_CODEBOOK_FILE_TRAIN = f'{DATASET_DIR}/Training/codebook_small_unlimited_sad.npy'
+CODEBOOK_FILE_EUCLIDEAN = f'{DATASET_DIR}/Training/codebook_euclidean.npy'
+CODEBOOK_SMALL_FILE_EUCLIDEAN = f'{DATASET_DIR}/Training/codebook_euclidean_small.npy'
 
-MAP_KPS_TO_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords.npy'
-MAP_KPS_TO_SMALL_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small.npy'
-MAP_KPS_TO_SAD_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_sad.npy'
-MAP_KPS_TO_SMALL_SAD_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small_sad.npy'
+MAP_KPS_TO_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codebook.npy'
+MAP_KPS_TO_SMALL_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_small_codebook.npy'
 
-UNLIMITED_MAP_KPS_TO_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_unlimited.npy'
-UNLIMITED_MAP_KPS_TO_SMALL_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small_unlimited.npy'
-UNLIMITED_MAP_KPS_TO_SAD_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_sad_unlimited.npy'
-UNLIMITED_MAP_KPS_TO_SMALL_SAD_CODEBOOK_FILE = f'{DATASET_DIR}/map_kps_to_codewords_small_sad_unlimited.npy'
+HISTOGRAM_FILE_EXT = "_histogram.npy"
+SMALL_HISTOGRAM_FILE_EXT = "_histogram_small.npy"
 
-SMALL_HISTOGRAM_BINARY_FORMAT = "*histogram_small.npy"
-LARGE_HISTOGRAM_BINARY_FORMAT = "*histogram_gpu.npy"
+EUCLIDEAN_HISTOGRAM_FILE_EXT = "_histogram_euclidean.npy"
+SMALL_EUCLIDEAN_HISTOGRAM_FILE_EXT = "_histogram_small_euclidean.npy"
 
 
 ################################################################################
@@ -50,8 +41,6 @@ LARGE_HISTOGRAM_BINARY_FORMAT = "*histogram_gpu.npy"
 ################################################################################
 
 def euclidean_distance(vec1, vec2):
-    # assert len(vec1) == len(vec2), 'vec1 and vec2 not same length.'
-
     total = 0
     for i in range(len(vec1)):
         total += pow(vec1[i] - vec2[i], 2)
@@ -59,8 +48,6 @@ def euclidean_distance(vec1, vec2):
     return math.sqrt(total)
 
 def sad(vec1, vec2):
-    # assert len(vec1) == len(vec2), 'vec1 and vec2 not same length.'
-
     total = 0
     for i in range(len(vec1)):
         total += abs(vec1[i] - vec2[i])
@@ -113,21 +100,21 @@ def get_image_paths(image_format: str, path=TEST_PATH):
                 image_paths[(class_name, directory)].append(file)
     return image_paths
 
-def get_histogram_paths(normal=False):
+def get_histogram_paths(fname_ext=HISTOGRAM_FILE_EXT):
     training_histogram_paths = collections.defaultdict(list)
     test_histogram_paths = collections.defaultdict(list)
 
-    histogram_file_extension = LARGE_HISTOGRAM_BINARY_FORMAT if normal else SMALL_HISTOGRAM_BINARY_FORMAT
+    match_fnames = f'*{fname_ext}'
 
     for class_name in CLASSES:
         training_directory, test_directory = f'{TRAINING_PATH}/{class_name}', f'{TEST_PATH}/{class_name}'
 
         for file in os.listdir(training_directory):
-            if fnmatch.fnmatch(file, histogram_file_extension):
+            if fnmatch.fnmatch(file, match_fnames):
                 training_histogram_paths[(class_name, training_directory)].append(file)
 
         for file in os.listdir(test_directory):
-            if fnmatch.fnmatch(file, histogram_file_extension):
+            if fnmatch.fnmatch(file, match_fnames):
                 test_histogram_paths[(class_name, test_directory)].append(file)
 
     return test_histogram_paths, training_histogram_paths
@@ -207,7 +194,7 @@ def load_descriptors(test_or_train, merge_in_class=False):
     """
     descriptors = {}
     for class_name in CLASSES:
-        match_descriptors = r'.*_descriptors_gpu' + re.escape('.npy')
+        match_descriptors = r'.*_descriptors' + re.escape('.npy')
         load_from = f'{DATASET_DIR}/{test_or_train}/{class_name}/'
         descriptors_dict = load_np_pickles_in_directory(load_from, match_descriptors)
 
@@ -235,7 +222,7 @@ def load_keypoints(test_or_train, merge_in_class=False):
     """
     keypoints = {}
     for class_name in CLASSES:
-        match_keypoints = r'.*_keypoints_gpu' + re.escape('.npy')
+        match_keypoints = r'.*_keypoints' + re.escape('.npy')
         load_from = f'{DATASET_DIR}/{test_or_train}/{class_name}/'
         keypoints_dict = load_np_pickles_in_directory(load_from, match_keypoints)
 
@@ -263,7 +250,7 @@ def load_histograms(test_or_train, merge_in_class=False):
     """
     histograms = {}
     for class_name in CLASSES:
-        match_keypoints = r'.*histogram_gpu' + re.escape('.npy')
+        match_keypoints = r'.*histogram' + re.escape('.npy')
         load_from = f'{DATASET_DIR}/{test_or_train}/{class_name}/'
         class_hists_dict = load_np_pickles_in_directory(load_from, match_keypoints)
 
