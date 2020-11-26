@@ -3,6 +3,7 @@
 SIFT function implementation for feature detection from an image. Our example classifies images for the following classes: airplanes, cars, dog, faces and keyboard.
 
 We use the Bag of Word model where we generate codewords for each class, i.e. 20,000 features from the dog class. Once we generated the codewords for each classes, we can create a dictionary of 500 codeword and normalise it. Once we have 500 codewords we can use it to create a histogram for all the test and training images. The histogram bin represents a codeword/feature that will be used to help us classify or label the image based off the classes we mentioned.
+
 # How to run
 
 How to run the different steps of the Bag of Word model (and the time it takes). Paste the python commands into console/terminal.
@@ -24,8 +25,37 @@ python SIFT.py
 
 * Generate the codebook descriptors by euclidean and sad
 * Also generate the smaller codebook with cluster of 20
-* Stores as binary file ***.npy***
+* Stores as binary file ***...codebook.npy***
+* Takes x hours
 
 ``` 
 python gen_codebook.py
+```
+
+## Step 3 - Generate Histogram
+
+* Loads binary codebook for test and training
+* Generate histograms based on those normal and small codebook 
+* Stores as binary file ***...histogram_euclidean.npy*** or ***...histogram_euclidean_small.npy***
+* Takes < 15 minutes
+
+``` 
+python gen_histograms.py
+```
+
+## Step 4 - Classification by Euclidean Distance
+
+* Classify all the test images and returns image and label
+* Output all classes with 10 images and the classified label
+
+``` 
+python classification_by_euclidean.py
+```
+## Step 5 - Classification by Intersection
+
+* Classify all the test images and returns image and label
+* Output all classes with 10 images and the classified label
+
+``` 
+python classification_by_intersection.py
 ```
