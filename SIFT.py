@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-CW1-COMP338 - Step 1. (20 marks) Feature extraction
+CW1-COMP338 - Step 1. Feature extraction
+
+Thepnathi Chindalaksanaloet, 201123978
+Robert Szafarczyk, 201307211
+
 """
 
 import cv2
@@ -12,11 +16,10 @@ from functools import cmp_to_key
 
 from helper import load_images_in_directory, DATASET_DIR, CLASSES
 
-import multiprocessing as mp
-from pysift import computeKeypointsAndDescriptors
-from silx.opencl import sift
 
-
+################################################################################
+# Helper methonds specifically for SIFT.
+################################################################################
 def convolution(img, kernel, average=False):
     """
     Convolute an image with a kernel. If the passed in image has 3 colour channels,
@@ -611,26 +614,21 @@ if __name__ == "__main__":
         for class_name in CLASSES:
             class_imgs = load_images_in_directory(f'{DATASET_DIR}/{training_or_test}/{class_name}')
             for fname, img in class_imgs.items():
-                # descriptors, keypoints = extract_SIFT_features(img)
-                sift_ocl = sift.SiftPlan(template=img, devicetype="GPU")
+                descriptors, keypoints = extract_SIFT_features(img)
 
-                outputs = sift_ocl.keypoints(img)
-
-                keypoints = [[(out.x, out.y), out.scale] for out in outputs]
-                descriptors = []
-                for d in outputs.desc:
-                    descriptors.append([float(e) for e in d])
+                # Store a single keypoint as [(x, y), diameter].
+                # keypoints[i] corresponds to descriptors[i]
+                keypoints = [[k.pt, k.size] for k in keypoints]
 
                 fname = fname.split('.')[0]
-                d_file = f'{DATASET_DIR}/{training_or_test.lower()}/{class_name}/{fname}_descriptors_gpu.npy'
-                k_file = f'{DATASET_DIR}/{training_or_test.lower()}/{class_name}/{fname}_keypoints_gpu.npy'
+                d_file = f'{DATASET_DIR}/{training_or_test.lower()}/{class_name}/{fname}_descriptors.npy'
+                k_file = f'{DATASET_DIR}/{training_or_test.lower()}/{class_name}/{fname}_keypoints.npy'
                 with open(d_file, 'wb') as f:
                     np.save(f, descriptors)
                 with open(k_file, 'wb') as f:
                     np.save(f, keypoints)
 
                 print(f'Finished {fname} of {class_name} of {training_or_test} at minute {(time.time() - start_time)//60}')
-
 
 
     print(f'Finished all in {(time.time() - start_time)//60} minutes.')
