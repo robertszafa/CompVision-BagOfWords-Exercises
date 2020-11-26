@@ -67,10 +67,11 @@ def mean(vectors):
     """
     return np.sum(vectors, 0) / len(vectors)
 
-def kNN(candidate: list, neighbours_by_class: dict, k=1, dist_func=euclidean_distance):
+def k_NN(candidate: list, neighbours_by_class: dict, k=1, dist_func=euclidean_distance):
     """
     Return the class of the k-Nearest Neighbour.
     """
+    # [class_of_img_hist: distance] pairs
     results = []
 
     for class_type, class_histograms in neighbours_by_class.items():
