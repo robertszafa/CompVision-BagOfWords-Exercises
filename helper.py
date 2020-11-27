@@ -332,4 +332,4 @@ def display_multiple_image_with_labels(class_type, images_and_labels):
 ################################################################################
 
 def print_classification_percentage(class_type, percentage: int) -> None:
-    print(f'{class_type} correct label is {percentage}%')
+    print(f'{percentage}% of the predicted {class_type} labels are correct')
