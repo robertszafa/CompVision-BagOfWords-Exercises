@@ -48,6 +48,9 @@ if __name__ == "__main__":
         codebook_file = hp.CODEBOOK_FILE
         map_kp_to_word_file = hp.MAP_KPS_TO_CODEBOOK_FILE
 
+    dictionary_dist_func = 'euclidean' if args.e else 'Sum Of Absolute Difference'
+    num_words = 20 if args.s else 500
+    print(f'---> Dictionary of {num_words} visual words was clusterd using {dictionary_dist_func} distance function')
 
     codebook = hp.load_pickled_list(codebook_file)
     map_kp_to_words = hp.load_pickled_list(map_kp_to_word_file)

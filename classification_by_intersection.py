@@ -1,3 +1,11 @@
+"""
+CW1-COMP338 - Step 6 Classification by histogram intersection
+
+Thepnathi Chindalaksanaloet, 201123978
+Robert Szafarczyk, 201307211
+"""
+
+import argparse
 from typing import Dict, List
 import helper as hp
 import collections
@@ -9,7 +17,7 @@ import collections
 # Same number of bin (i.e. codewords)
 def intersection(test_hist, train_hist):
     total = 0
-    for i, codeword_freq in enumerate(test_hist):
+    for i in range(len(test_hist)):
         total += min(test_hist[i], train_hist[i])
     return total
 
@@ -56,7 +64,6 @@ def label_all_test_images(hist_ext=hp.HISTOGRAM_FILE_EXT):
 
         percentage_error = int((1 - (correct_label / amount)) * 100)
         total_error += percentage_error
-        # hp.print_classification_percentage(class_type[0], percentage_error)
         print(f'{percentage_error}% classification error for the {class_type[0]} class')
 
     print(f'---> {total_error/len(all_test_hist)}% overall classification error.')
@@ -66,11 +73,21 @@ def label_all_test_images(hist_ext=hp.HISTOGRAM_FILE_EXT):
 
 
 if __name__ == "__main__":
-    print("Classification using intersection... \n" + hp.LONG_LOCOMOTIVE)
-    result = label_all_test_images(hp.HISTOGRAM_FILE_EXT)
-    result_small_codebook = label_all_test_images(hp.HISTOGRAM_SMALL_FILE_EXT)
-    result_euclidean_codebook = label_all_test_images(hp.HISTOGRAM_EUCLIDEAN_FILE_EXT)
-    result_small_euclidean_codebook = label_all_test_images(hp.HISTOGRAM_EUCLIDEAN_SMALL_FILE_EXT)
+    parser = argparse.ArgumentParser(description='Classify the class of images using histogram intersetion.')
+    parser.add_argument('-e', help='use codebook generated using euclidean distance', action='store_true')
+    parser.add_argument('-s', help='use small codebook', action='store_true')
+    args = parser.parse_args()
+
+    print("Classification using histogram intersetion... \n" + hp.LONG_LOCOMOTIVE)
+
+    if args.e and args.s:
+        result = label_all_test_images(hp.HISTOGRAM_EUCLIDEAN_SMALL_FILE_EXT)
+    elif args.e:
+        result = label_all_test_images(hp.HISTOGRAM_EUCLIDEAN_FILE_EXT)
+    elif args.s:
+        result = label_all_test_images(hp.HISTOGRAM_SMALL_FILE_EXT)
+    else:
+        result = label_all_test_images(hp.HISTOGRAM_FILE_EXT)
 
 
     for key in result:
