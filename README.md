@@ -47,6 +47,15 @@ python gen_histograms.py
 
 * Classify all the test images and returns image and label
 * Output all classes with 10 images and the classified label
+* Input the following parameters for different result
+
+``` 
+optional arguments:
+  -h, --help  show this help message and exit
+  -e          use codebook generated using euclidean distance
+  -s          use small codebook
+  --training  classify training images
+```
 
 ``` 
 python classification_by_euclidean.py
@@ -55,7 +64,32 @@ python classification_by_euclidean.py
 
 * Classify all the test images and returns image and label
 * Output all classes with 10 images and the classified label
+* Input the following parameters for different result
+
+``` 
+optional arguments:
+  -h, --help  show this help message and exit
+  -e          use codebook generated using euclidean distance
+  -s          use small codebook
+```
 
 ``` 
 python classification_by_intersection.py
+```
+
+
+## Step 6 - Visualise Image Patches Assign to Same Codeword
+
+* Visualise image keypoints that were assigned to the same code word in the disctionary of visual words
+* Input the following parameters for different result
+
+``` 
+optional arguments:
+  -h, --help  show this help message and exit
+  -e          use codebook generated using euclidean distance
+  -s          use small codebook
+```
+
+``` 
+python visualise_same_word_patches.py
 ```
