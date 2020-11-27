@@ -41,22 +41,6 @@ def gen_single_img_histogram(img_descriptors_codebook_pair):
 
     return histogram_of_codewords, descriptor_to_codeword_map
 
-## Step 3.3
-def draw_keypoint(img_fname, kp_x, kp_y, kp_diameter, title=''):
-    img = cv2.imread(img_fname)
-    radius = kp_diameter//2
-    kp = img[kp_x-radius : kp_x+radius, kp_y-radius : kp_y+radius]
-
-    cv2.imshow(title, kp)
-    cv2.waitKey(0)
-
-def visualize_similar_patches(map_kps_to_codewords):
-    for word_idx, img_fname_keypoints_pairs in enumerate(map_kps_to_codewords):
-        for img_fname, kps in img_fname_keypoints_pairs.items():
-            for kp in kps:
-                title = title=f'{img_fname.split(hp.DATASET_DIR)[1]} --> codeword_{word_idx}'
-                draw_keypoint(img_fname, int(kp[0][0]), int(kp[0][1]), int(kp[1]), title)
-
 ## Step 3.4
 def normalise_histogram(histogram):
     """
@@ -131,8 +115,8 @@ def gen_histograms(training_descriptors, test_descriptors, training_keypoints, t
 if __name__ == "__main__":
     start_time = time.time()
 
-    # codebook = hp.load_pickled_list(hp.CODEBOOK_FILE)
-    # codebook_small = hp.load_pickled_list(hp.CODEBOOK_SMALL_FILE)
+    codebook = hp.load_pickled_list(hp.CODEBOOK_FILE)
+    codebook_small = hp.load_pickled_list(hp.CODEBOOK_SMALL_FILE)
 
     codebook_euclidean = hp.load_pickled_list(hp.CODEBOOK_EUCLIDEAN_FILE)
     codebook_euclidean_small = hp.load_pickled_list(hp.CODEBOOK_EUCLIDEAN_SMALL_FILE)
@@ -144,17 +128,17 @@ if __name__ == "__main__":
     test_keypoints = hp.load_keypoints(test_or_train='Test', merge_in_class=False)
 
     # Generate histograms for the 500- and 20-word codebook where SAD was used as similarity function.
-    # map_kps_to_codebook = gen_histograms(training_descriptors, test_descriptors,
-    #                                      training_keypoints, test_keypoints,
-    #                                      codebook,
-    #                                      hist_file_extension=hp.HISTOGRAM_FILE_EXT)
-    # hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_FILE, map_kps_to_codebook)
+    map_kps_to_codebook = gen_histograms(training_descriptors, test_descriptors,
+                                         training_keypoints, test_keypoints,
+                                         codebook,
+                                         hist_file_extension=hp.HISTOGRAM_FILE_EXT)
+    hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_FILE, map_kps_to_codebook)
 
-    # map_kps_to_codebook_small = gen_histograms(training_descriptors, test_descriptors,
-    #                                            training_keypoints, test_keypoints,
-    #                                            codebook_small,
-    #                                            hist_file_extension=hp.HISTOGRAM_SMALL_FILE_EXT)
-    # hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_SMALL_FILE, map_kps_to_codebook)
+    map_kps_to_codebook_small = gen_histograms(training_descriptors, test_descriptors,
+                                               training_keypoints, test_keypoints,
+                                               codebook_small,
+                                               hist_file_extension=hp.HISTOGRAM_SMALL_FILE_EXT)
+    hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_SMALL_FILE, map_kps_to_codebook)
 
     # # Generate histograms for the 500- and 20-word codebook where euclidean distance was used as similarity function.
     map_kps_to_codebook_euclidean_small = gen_histograms(training_descriptors, test_descriptors,
@@ -168,20 +152,5 @@ if __name__ == "__main__":
                                                codebook_euclidean,
                                                hist_file_extension=hp.HISTOGRAM_EUCLIDEAN_FILE_EXT)
     hp.save_to_pickle(hp.MAP_KPS_TO_CODEBOOK_EUCLIDEAN_FILE, map_kps_to_codebook_euclidean)
-
-    ###########################################################################
-    # Step 3.3 Visualize some image patches that are assigned to the same codeword.
-    ################################################################################
-    map_kps_to_codebook = hp.load_pickled_list(hp.MAP_KPS_TO_CODEBOOK_FILE)
-    map_kps_to_codebook_small = hp.load_pickled_list(hp.MAP_KPS_TO_CODEBOOK_SMALL_FILE)
-
-    # Put most matched codewords and the corresponding keypoints to the front.
-    num_of_kps = lambda d : np.sum([len(v) for v in d.values()])
-    map_kps_to_codebook.sort(key=num_of_kps, reverse=True)
-    map_kps_to_codebook_small.sort(key=num_of_kps, reverse=True)
-
-    visualize_similar_patches(map_kps_to_codebook)
-    # visualize_similar_patches(map_kps_to_codebook_small)
-
 
     print(f'Finished program in {(time.time() - start_time)/60} minutes.')
