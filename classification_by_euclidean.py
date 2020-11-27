@@ -4,7 +4,7 @@ import numpy as np
 import helper as hp
 
 def label_all_training_images(hist_ext=hp.HISTOGRAM_FILE_EXT, k=5):
-    _, all_training_hist = hp.initialise_histograms(hist_ext)               # Get all the test and training histograms
+    _, all_training_hist = hp.initialise_histograms(hist_ext)
 
     num_words = len(list(all_training_hist.values())[0][0])
     dictionary_dist_func = 'euclidean' if 'euclidean' in hist_ext else 'Sum Of Absolute Difference'
@@ -47,7 +47,7 @@ def label_all_test_images(hist_ext=hp.HISTOGRAM_FILE_EXT, k=1):
     print(f'---> Dictionary was clusterd using {dictionary_dist_func} distance function')
     print(f'---> Using {k}-Nearest Neighbour to classify')
 
-    total_preccision = 0
+    total_error = 0
     for class_type in all_test_hist:
         correct_label, amount = 0, 0
         for hist in all_test_hist[class_type]:
@@ -56,11 +56,13 @@ def label_all_test_images(hist_ext=hp.HISTOGRAM_FILE_EXT, k=1):
             if label[0] == class_type[0]:
                 correct_label += 1
             amount += 1
-        percentage_correct = int((correct_label / amount) * 100)
-        total_preccision += percentage_correct
-        hp.print_classification_percentage(class_type[0], percentage_correct)
 
-    print(f'---> {total_preccision/len(all_test_hist)} average preccision.')
+        percentage_error = int((1 - (correct_label / amount)) * 100)
+        total_error += percentage_error
+        # hp.print_classification_percentage(class_type[0], percentage_error)
+        print(f'{percentage_error}% classification error for the {class_type[0]} class')
+
+    print(f'---> {total_error/len(all_test_hist)}% overall classification error.')
     print(hp.LONG_LOCOMOTIVE)
 
     return images_and_labels

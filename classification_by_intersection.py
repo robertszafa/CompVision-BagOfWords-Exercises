@@ -44,7 +44,7 @@ def label_all_test_images(hist_ext=hp.HISTOGRAM_FILE_EXT):
     print(f'---> Using histograms generated from a {num_words}-word dictionary')
     print(f'---> Dictionary was clusterd using {dictionary_dist_func} distance function')
 
-    total_preccision = 0
+    total_error = 0
     for class_type in all_test_hist:
         correct_label, amount = 0, 0
         for hist in all_test_hist[class_type]:
@@ -53,11 +53,13 @@ def label_all_test_images(hist_ext=hp.HISTOGRAM_FILE_EXT):
             amount += 1
             if label[0] == class_type[0]:
                 correct_label += 1
-        percentage_correct = int((correct_label / amount) * 100)
-        total_preccision += percentage_correct
-        print(f'{class_type[0]} correct label is {percentage_correct}%')
 
-    print(f'---> {total_preccision/len(all_test_hist)} average preccision.')
+        percentage_error = int((1 - (correct_label / amount)) * 100)
+        total_error += percentage_error
+        # hp.print_classification_percentage(class_type[0], percentage_error)
+        print(f'{percentage_error}% classification error for the {class_type[0]} class')
+
+    print(f'---> {total_error/len(all_test_hist)}% overall classification error.')
     print(hp.LONG_LOCOMOTIVE)
 
     return images_and_labels

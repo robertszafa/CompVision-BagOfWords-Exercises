@@ -107,13 +107,6 @@ def get_idx_of_1_NN(candidate, neighbours, dist_func=euclidean_distance):
 ################################################################################
 # Get directory or file paths
 ################################################################################
-
-def get_training_histogram_keys():
-    return [(CLASSES[i], f'{TRAINING_PATH}/{CLASSES[i]}') for i in range(len(CLASSES))]
-
-def get_test_histogram_keys():
-    return [(CLASSES[i], f'{TEST_PATH}/{CLASSES[i]}') for i in range(len(CLASSES))]
-
 def get_image_paths(image_format=DEFAULT_IMAGE_FORMAT, path=TEST_PATH):
     image_paths = collections.defaultdict(list)
 
@@ -146,13 +139,11 @@ def get_histogram_paths(fname_ext=HISTOGRAM_FILE_EXT):
 ################################################################################
 # Read/write binary files
 ################################################################################
-
 def load_pickled_list(fname) -> List:
     l = []
     with open(fname, 'rb') as f:
         l = np.load(f, allow_pickle=True)
     return l.tolist()
-
 
 def load_all_histograms(histograms_file_paths):
     histogram_values = collections.defaultdict(list)
@@ -164,19 +155,10 @@ def load_all_histograms(histograms_file_paths):
 
     return histogram_values
 
-def load_single_histogram(histogram_file_paths, filter_key=None):
-    histogram_values = collections.defaultdict(list)
-
-    for file in histogram_file_paths[filter_key]:
-        load_histograms_values = np.load(f'{filter_key[1]}/{file}', allow_pickle=True)
-        histogram_values[filter_key].append(load_histograms_values.tolist())
-
-    return histogram_values if filter_key else load_all_histograms(histogram_file_paths)
-
 def initialise_histograms(hist_ext):
     # Get the paths of all histograms
     test_path, training_path = get_histogram_paths(hist_ext)
-    
+
     # Load all histogram binary file name
     all_test_hist = load_all_histograms(test_path)
     all_training_hist = load_all_histograms(training_path)
@@ -273,29 +255,6 @@ def load_keypoints(test_or_train, merge_in_class=False):
 
     return keypoints
 
-def load_histograms(test_or_train, merge_in_class=False):
-    """
-    Read the keypoints from the {test_or_train} dataset.
-    Return a dictionary with the class names as keys.
-    If {merge_in_class} is True, then a single class will have a list of all keypoints as the value.
-    Otherwise, it will have a list of dictionaries as values, where the dictionaries have
-    the individual img filename as key and their list of keypoints as values.
-    """
-    histograms = {}
-    for class_name in CLASSES:
-        match_keypoints = r'.*histogram' + re.escape('.npy')
-        load_from = f'{DATASET_DIR}/{test_or_train}/{class_name}/'
-        class_hists_dict = load_np_pickles_in_directory(load_from, match_keypoints)
-
-        if merge_in_class:
-            histograms[class_name] = list(class_hists_dict.values())
-        else:
-            histograms[class_name] = class_hists_dict
-
-    return histograms
-
-
-
 def save_to_pickle(pickle_fname, data):
     with open(pickle_fname, 'wb') as f:
         np.save(f, data)
@@ -304,7 +263,6 @@ def save_to_pickle(pickle_fname, data):
 ################################################################################
 # Result visualisations
 ################################################################################
-
 def display_image_with_label(label, image_path):
     img = mpimg.imread(image_path)
     imgplot = plt.imshow(img)
@@ -326,10 +284,3 @@ def display_multiple_image_with_labels(class_type, images_and_labels):
 
     plt.tight_layout()
     plt.show()
-
-################################################################################
-# General Console Output
-################################################################################
-
-def print_classification_percentage(class_type, percentage: int) -> None:
-    print(f'{percentage}% of the predicted {class_type} labels are correct')
