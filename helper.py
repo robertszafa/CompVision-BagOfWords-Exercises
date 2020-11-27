@@ -42,6 +42,8 @@ HISTOGRAM_SMALL_FILE_EXT = "_histogram_small.npy"
 HISTOGRAM_EUCLIDEAN_FILE_EXT = "_histogram_euclidean.npy"
 HISTOGRAM_EUCLIDEAN_SMALL_FILE_EXT = "_histogram_euclidean_small.npy"
 
+DEFAULT_IMAGE_FORMAT = "jpg"
+LONG_LOCOMOTIVE = "========================================="
 
 ################################################################################
 # Common math functions
@@ -112,7 +114,7 @@ def get_training_histogram_keys():
 def get_test_histogram_keys():
     return [(CLASSES[i], f'{TEST_PATH}/{CLASSES[i]}') for i in range(len(CLASSES))]
 
-def get_image_paths(image_format: str, path=TEST_PATH):
+def get_image_paths(image_format=DEFAULT_IMAGE_FORMAT, path=TEST_PATH):
     image_paths = collections.defaultdict(list)
 
     for class_name in CLASSES:
@@ -170,6 +172,16 @@ def load_single_histogram(histogram_file_paths, filter_key=None):
         histogram_values[filter_key].append(load_histograms_values.tolist())
 
     return histogram_values if filter_key else load_all_histograms(histogram_file_paths)
+
+def initialise_histograms(hist_ext):
+    # Get the paths of all histograms
+    test_path, training_path = get_histogram_paths(hist_ext)
+    
+    # Load all histogram binary file name
+    all_test_hist = load_all_histograms(test_path)
+    all_training_hist = load_all_histograms(training_path)
+
+    return all_test_hist, all_training_hist
 
 def load_images_in_directory(path) -> Dict[str, List]:
     images = {}
@@ -314,3 +326,10 @@ def display_multiple_image_with_labels(class_type, images_and_labels):
 
     plt.tight_layout()
     plt.show()
+
+################################################################################
+# General Console Output
+################################################################################
+
+def print_classification_percentage(class_type, percentage: int) -> None:
+    print(f'{class_type} correct label is {percentage}%')
