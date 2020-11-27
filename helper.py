@@ -272,8 +272,11 @@ def display_image_with_label(label, image_path):
 def display_multiple_image_with_labels(class_type, images_and_labels):
     rows = 2
     cols = len(images_and_labels) // 2
-    figure, ax = plt.subplots(nrows=rows, ncols=cols, num=None, figsize=(10,6), dpi=80, facecolor='w', edgecolor='k')
+
+    figure, ax = plt.subplots(nrows=rows, ncols=cols, num=None, figsize=(10,6), dpi=80,
+                              facecolor='w', edgecolor='k')
     figure.canvas.set_window_title(f'Predicting {class_type[0].capitalize()} Images')
+    figure.canvas.toolbar = False
 
     for i, image_label_object in enumerate(images_and_labels):
         img = mpimg.imread(f'{class_type[1]}/{image_label_object[1]}')
@@ -283,4 +286,8 @@ def display_multiple_image_with_labels(class_type, images_and_labels):
         ax.ravel()[i].set_axis_off()
 
     plt.tight_layout()
-    plt.show()
+
+    # SHow and cloase after a button is pressed.
+    plt.show(block=False)
+    plt.waitforbuttonpress()
+    plt.close()
