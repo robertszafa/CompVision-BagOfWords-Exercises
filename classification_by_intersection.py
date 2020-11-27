@@ -35,18 +35,9 @@ def label_histogram_by_intersection(test_hist, train_hist):
     return label
 
 def label_all_test_images(hist_ext=hp.HISTOGRAM_FILE_EXT):
-    # Get the paths of all histogram files
-    test_path, training_path = hp.get_histogram_paths(hist_ext)
-
-    # Load all histogram binary file name
-    all_test_hist = hp.load_all_histograms(test_path)
-    all_training_hist = hp.load_all_histograms(training_path)
-
-    # Get all the test images directory
-    test_images_dir = hp.get_image_paths("jpg")
-
-    # display images with classified label
-    images_and_labels = collections.defaultdict(list)
+    all_test_hist, all_training_hist = hp.initialise_histograms(hist_ext)               # Get all the test and training histograms
+    test_images_dir = hp.get_image_paths(hp.DEFAULT_IMAGE_FORMAT, hp.TEST_PATH)         # Get all the test images directory
+    images_and_labels = collections.defaultdict(list)                                   # display images with classified label
 
     for class_type in all_test_hist:
         correct_label, amount = 0, 0
@@ -58,11 +49,12 @@ def label_all_test_images(hist_ext=hp.HISTOGRAM_FILE_EXT):
                 correct_label += 1
         percentage_correct = int((correct_label / amount) * 100)
         print(f'{class_type[0]} correct label is {percentage_correct}%')
-
+    print(hp.LONG_LOCOMOTIVE)
     return images_and_labels
 
 
 if __name__ == "__main__":
+    print("Classification using intersection... \n" + hp.LONG_LOCOMOTIVE)
     result = label_all_test_images(hp.HISTOGRAM_FILE_EXT)
     result_small_codebook = label_all_test_images(hp.HISTOGRAM_SMALL_FILE_EXT)
     result_euclidean_codebook = label_all_test_images(hp.HISTOGRAM_EUCLIDEAN_FILE_EXT)
