@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-CW1-COMP338 - Step 1. (20 marks) Feature extraction
+CW1-COMP338 - Step 1. Feature extraction
+
+Thepnathi Chindalaksanaloet, 201123978
+Robert Szafarczyk, 201307211
+
 """
 
 import cv2
@@ -13,6 +17,9 @@ from functools import cmp_to_key
 from helper import load_images_in_directory, DATASET_DIR, CLASSES
 
 
+################################################################################
+# Helper methonds specifically for SIFT.
+################################################################################
 def convolution(img, kernel, average=False):
     """
     Convolute an image with a kernel. If the passed in image has 3 colour channels,
@@ -608,18 +615,20 @@ if __name__ == "__main__":
             class_imgs = load_images_in_directory(f'{DATASET_DIR}/{training_or_test}/{class_name}')
             for fname, img in class_imgs.items():
                 descriptors, keypoints = extract_SIFT_features(img)
+
+                # Store a single keypoint as [(x, y), diameter].
+                # keypoints[i] corresponds to descriptors[i]
                 keypoints = [[k.pt, k.size] for k in keypoints]
 
                 fname = fname.split('.')[0]
-                d_file = f'{DATASET_DIR}/{training_or_test.lower()}_descriptors/{class_name}/{fname}_descriptors.npy'
-                k_file = f'{DATASET_DIR}/{training_or_test.lower()}_descriptors/{class_name}/{fname}_keypoints.npy'
+                d_file = f'{DATASET_DIR}/{training_or_test.lower()}/{class_name}/{fname}_descriptors.npy'
+                k_file = f'{DATASET_DIR}/{training_or_test.lower()}/{class_name}/{fname}_keypoints.npy'
                 with open(d_file, 'wb') as f:
                     np.save(f, descriptors)
                 with open(k_file, 'wb') as f:
                     np.save(f, keypoints)
 
                 print(f'Finished {fname} of {class_name} of {training_or_test} at minute {(time.time() - start_time)//60}')
-
 
 
     print(f'Finished all in {(time.time() - start_time)//60} minutes.')
